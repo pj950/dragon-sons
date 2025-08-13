@@ -6,6 +6,8 @@ import type { Balance, Config, Player, Element, CharacterDef } from "./game/type
 import { computeDamage } from "./game/combat";
 import { World } from "./game/world";
 import { initStore, loadLeaderboard, loadStats, saveLeaderboard, saveStats } from "./persist/store";
+import fs from "fs";
+import path from "path";
 
 // Room support (single default room + spectators)
 interface Room {
@@ -117,6 +119,13 @@ function handleMessage(room: Room, state: ClientState, msg: any) {
   const now = Date.now();
   const cfg = getConfig();
   const balance = getBalance();
+  // optional signature check
+  const secret = process.env.MSG_SECRET;
+  if (secret && msg?.sig) {
+    const { sig, ...payload } = msg;
+    const expect = simpleSig(JSON.stringify(payload), secret);
+    if (sig !== expect) return;
+  }
   if (msg?.t === "ping") {
     state.lastPing = now;
     state.ws.send(JSON.stringify({ t: "pong" }));
@@ -309,15 +318,32 @@ function startRoomLoops(room: Room) {
     const balance = getBalance();
     const cfg = getConfig();
 
-    // match state transitions
+    // min players auto start/reset
+    const minPlayers = Number(process.env.MIN_PLAYERS || 2);
+    const activePlayers = Array.from(room.clients.values()).filter(c => !!c.player).length;
+    if (room.state === "lobby" && activePlayers >= minPlayers) {
+      room.state = "countdown";
+      room.countdownEndAt = now + 5000;
+      broadcast(room, { t: "countdown", endAt: room.countdownEndAt });
+      logEvent(room.id, { type: "countdown", at: now, players: activePlayers });
+    }
+    if (room.state === "countdown" && activePlayers < minPlayers) {
+      room.state = "lobby";
+      room.countdownEndAt = undefined;
+      broadcast(room, { t: "countdown_cancel" });
+      logEvent(room.id, { type: "countdown_cancel", at: now, players: activePlayers });
+    }
+
     if (room.state === "countdown" && room.countdownEndAt && now >= room.countdownEndAt) {
       room.state = "playing";
-      room.endAt = now + 10 * 60_000; // 10 minutes
+      room.endAt = now + 10 * 60_000;
       broadcast(room, { t: "start" });
+      logEvent(room.id, { type: "start", at: now });
     }
     if (room.state === "playing" && room.endAt && now >= room.endAt) {
       room.state = "ended";
       await persistMatch(room);
+      logEvent(room.id, { type: "end", at: now });
     }
 
     room.world.update(1 / balance.tickRate, now);
@@ -346,6 +372,7 @@ function startRoomLoops(room: Room) {
         try { s.ws.terminate(); } catch {}
         room.clients.delete(s.id);
         if (s.player) room.world.removePlayer(s.id);
+        logEvent(room.id, { type: "disconnect", id: s.id, at: now });
       }
     }
   }, 5000);
@@ -391,4 +418,24 @@ function pickRandom<T>(arr: readonly T[]): T {
 
 function generateId(): string {
   return Math.random().toString(36).slice(2, 10);
+}
+
+function logEvent(roomId: string, evt: any) {
+  try {
+    const line = JSON.stringify({ room: roomId, ...evt }) + "\n";
+    fs.appendFileSync(pathJoinData("events.log"), line);
+  } catch {}
+}
+
+function pathJoinData(name: string) {
+  const dir = process.env.DATA_DIR || path.join(process.cwd(), "data");
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  return path.join(dir, name);
+}
+
+function simpleSig(body: string, secret: string): string {
+  let h = 0;
+  for (let i = 0; i < body.length; i++) h = (h * 131 + body.charCodeAt(i)) >>> 0;
+  for (let i = 0; i < secret.length; i++) h = (h * 131 + secret.charCodeAt(i)) >>> 0;
+  return h.toString(16);
 }
