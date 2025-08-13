@@ -1,15 +1,10 @@
 import http from "http";
 import { WebSocketServer, WebSocket } from "ws";
-import configJson from "./config/balance.json";
+import { getConfig, getBalance, watchConfig } from "./config/runtime";
 import { DEFAULT_ELEMENT_MATRIX } from "./game/elements";
-import type { Balance, Config, Player, Element, CharacterDef, SkillDef } from "./game/types";
+import type { Balance, Config, Player, Element, CharacterDef } from "./game/types";
 import { computeDamage } from "./game/combat";
 import { World } from "./game/world";
-
-const PORT = Number(process.env.PORT ?? 8787);
-
-const config = configJson as unknown as Config;
-const balance: Balance = config.balance as Balance;
 
 // Room support (single default room + spectators)
 interface Room {
@@ -17,17 +12,25 @@ interface Room {
   world: World;
   clients: Map<string, ClientState>;
   spectators: Set<string>;
+  // match state
+  state: "lobby" | "countdown" | "playing" | "ended";
+  countdownEndAt?: number;
+  endAt?: number;
+  leaderboard: Array<{ id: string; kills: number; alive: boolean }>;
 }
 
 const rooms = new Map<string, Room>();
 function getOrCreateRoom(id = "default"): Room {
   let r = rooms.get(id);
   if (!r) {
+    const balance = getBalance();
     r = {
       id,
       world: new World({ width: 100, height: 100, initialRadius: 50 }, balance),
       clients: new Map(),
       spectators: new Set(),
+      state: "lobby",
+      leaderboard: [],
     };
     rooms.set(id, r);
     startRoomLoops(r);
@@ -37,6 +40,7 @@ function getOrCreateRoom(id = "default"): Room {
 
 const server = http.createServer();
 const wss = new WebSocketServer({ server });
+watchConfig();
 
 interface ClientState {
   id: string;
@@ -44,21 +48,21 @@ interface ClientState {
   player: Player | null;
   lastPing: number;
   roomId: string;
+  token?: string;
 }
 
 function pickCharacter(): CharacterDef {
-  const list = config.characters;
+  const list = getConfig().characters;
   return list[Math.floor(Math.random() * list.length)];
 }
 
 wss.on("connection", (ws: WebSocket) => {
   const clientId = generateId();
-  // join default room as player by default
+  const token = generateId();
   const room = getOrCreateRoom("default");
 
-  // create player
   const baseChar = pickCharacter();
-  const element: Element = (baseChar.element === "random" ? pickRandom(config.elements) : baseChar.element) as Element;
+  const element: Element = (baseChar.element === "random" ? pickRandom(getConfig().elements) : baseChar.element) as Element;
   const player: Player = {
     id: clientId,
     element,
@@ -79,23 +83,22 @@ wss.on("connection", (ws: WebSocket) => {
     speedMultiplier: 1,
     bag: {},
     cooldowns: {},
-    slots: new Array(balance.slotCount ?? 3).fill(null),
+    slots: new Array(getBalance().slotCount ?? 3).fill(null),
   };
   player.zoneElement = room.world.computeZoneElement(player);
 
-  const state: ClientState = { id: clientId, ws, player, lastPing: Date.now(), roomId: room.id };
+  const state: ClientState = { id: clientId, ws, player, lastPing: Date.now(), roomId: room.id, token };
   room.clients.set(clientId, state);
   room.world.addPlayer(player);
+  ensureLeaderboard(room, clientId);
 
-  ws.send(JSON.stringify({ t: "hello", id: clientId, element: player.element, room: room.id }));
+  ws.send(JSON.stringify({ t: "hello", id: clientId, element: player.element, room: room.id, token }));
 
   ws.on("message", (data: Buffer) => {
     try {
       const msg = JSON.parse(data.toString());
       handleMessage(room, state, msg);
-    } catch (err) {
-      // ignore invalid payloads
-    }
+    } catch (err) {}
   });
 
   ws.on("close", () => {
@@ -104,11 +107,51 @@ wss.on("connection", (ws: WebSocket) => {
   });
 });
 
+function ensureLeaderboard(room: Room, id: string) {
+  if (!room.leaderboard.find(e => e.id === id)) room.leaderboard.push({ id, kills: 0, alive: true });
+}
+
 function handleMessage(room: Room, state: ClientState, msg: any) {
   const now = Date.now();
+  const cfg = getConfig();
+  const balance = getBalance();
   if (msg?.t === "ping") {
     state.lastPing = now;
     state.ws.send(JSON.stringify({ t: "pong" }));
+    return;
+  }
+  if (msg?.t === "rejoin" && typeof msg.token === "string") {
+    if (state.token === msg.token && !state.player) {
+      // basic rejoin to create a new player
+      const baseChar = pickCharacter();
+      const element: Element = (baseChar.element === "random" ? pickRandom(cfg.elements) : baseChar.element) as Element;
+      const player: Player = {
+        id: state.id,
+        element,
+        baseAtk: baseChar.atk,
+        fruitAtkFlat: 0,
+        def: baseChar.def,
+        crit: baseChar.crit,
+        critDmg: baseChar.critDmg,
+        agi: baseChar.agi,
+        dodge: baseChar.dodge,
+        sameFruitStacks: {},
+        x: Math.random() * 100,
+        y: Math.random() * 100,
+        vx: 0,
+        vy: 0,
+        hp: 100,
+        maxHp: 100,
+        speedMultiplier: 1,
+        bag: {},
+        cooldowns: {},
+        slots: new Array(balance.slotCount ?? 3).fill(null),
+      };
+      state.player = player;
+      rooms.get(state.roomId)!.world.addPlayer(player);
+      ensureLeaderboard(room, state.id);
+      return;
+    }
     return;
   }
   if (msg?.t === "rooms") {
@@ -125,13 +168,11 @@ function handleMessage(room: Room, state: ClientState, msg: any) {
     const r = rooms.get(msg.id);
     if (!r) return;
     if ((r.clients.size) >= (balance.roomCapacity ?? 16)) return;
-    // remove from current
     const cur = rooms.get(state.roomId);
     if (cur) {
       cur.clients.delete(state.id);
       if (state.player) cur.world.removePlayer(state.id);
     }
-    // add to new room
     state.roomId = r.id;
     r.clients.set(state.id, state);
     if (state.player) r.world.addPlayer(state.player);
@@ -143,14 +184,24 @@ function handleMessage(room: Room, state: ClientState, msg: any) {
     state.player = null;
     return;
   }
+  if (msg?.t === "start" && room.state === "lobby") {
+    room.state = "countdown";
+    room.countdownEndAt = now + 5000;
+    broadcast(room, { t: "countdown", endAt: room.countdownEndAt });
+    return;
+  }
   if (!state.player) return;
 
   if (msg?.t === "move") {
     if ((state as any)._lastMoveAt && now - (state as any)._lastMoveAt < 33) return;
     (state as any)._lastMoveAt = now;
     const { vx = 0, vy = 0 } = msg;
-    state.player.vx = Math.max(-1, Math.min(1, Number(vx) || 0));
-    state.player.vy = Math.max(-1, Math.min(1, Number(vy) || 0));
+    // anti-cheat: cap speed vector magnitude
+    const mag = Math.hypot(vx, vy);
+    const cap = 1.2; // allow slight tolerance
+    const scale = mag > cap ? cap / mag : 1;
+    state.player.vx = Math.max(-1, Math.min(1, Number(vx) * scale || 0));
+    state.player.vy = Math.max(-1, Math.min(1, Number(vy) * scale || 0));
     return;
   }
   if (msg?.t === "pickup") {
@@ -204,7 +255,7 @@ function handleMessage(room: Room, state: ClientState, msg: any) {
     return;
   }
   if (msg?.t === "cast" && typeof msg.skillId === "string" && typeof msg.target === "string") {
-    const skill = config.skills.find(s => s.id === msg.skillId);
+    const skill = cfg.skills.find(s => s.id === msg.skillId);
     if (!skill) return;
     const next = state.player.cooldowns[skill.id] ?? 0;
     if (now < next) return;
@@ -217,7 +268,7 @@ function handleMessage(room: Room, state: ClientState, msg: any) {
 }
 
 function handleUseItem(state: ClientState, msg: { itemId: string }, now: number) {
-  const item = config.items.find(i => i.id === msg.itemId);
+  const item = getConfig().items.find(i => i.id === msg.itemId);
   if (!item) return;
   if ((item.trigger ?? "onUse") !== "onUse") return;
   const have = state.player!.bag[item.id] ?? 0;
@@ -236,39 +287,39 @@ function handleUseItem(state: ClientState, msg: { itemId: string }, now: number)
   state.player!.bag[item.id] = have - 1;
 }
 
+function broadcast(room: Room, payload: any) {
+  const s = JSON.stringify(payload);
+  for (const c of room.clients.values()) {
+    if (c.ws.readyState === c.ws.OPEN) c.ws.send(s);
+  }
+}
+
 function startRoomLoops(room: Room) {
   setInterval(() => {
     const now = Date.now();
-    room.world.update(1 / balance.tickRate, now);
-    for (const cs of room.clients.values()) {
-      const p = cs.player;
-      if (!p || !p.casting) continue;
-      if (now >= p.casting.endAt) {
-        const skill = config.skills.find(s => s.id === p.casting!.skillId);
-        const targetPlayer = room.clients.get(p.casting!.targetId || "");
-        if (skill && targetPlayer && targetPlayer.player) {
-          const damage = computeDamage(
-            { elementMatrix: DEFAULT_ELEMENT_MATRIX, balance },
-            p,
-            targetPlayer.player,
-            { id: skill.id, power: skill.power }
-          );
-          if (!targetPlayer.player.invulnUntil || now >= targetPlayer.player.invulnUntil) {
-            targetPlayer.player.hp = Math.max(0, targetPlayer.player.hp - damage);
-          }
-          targetPlayer.ws.send(JSON.stringify({ t: "hit", from: p.id, skill: skill.id, damage, hp: targetPlayer.player.hp }));
-        } else if (skill) {
-          const ent = room.world.state.entities.get(p.casting!.targetId || "");
-          if (ent && ent.type === "monster") {
-            const damage = Math.max(1, Math.floor((p.baseAtk + p.fruitAtkFlat) * skill.power));
-            room.world.damageMonster(ent.id, damage);
-          }
-        }
-        p.casting = undefined;
-      }
+    const balance = getBalance();
+    const cfg = getConfig();
+
+    // match state transitions
+    if (room.state === "countdown" && room.countdownEndAt && now >= room.countdownEndAt) {
+      room.state = "playing";
+      room.endAt = now + 10 * 60_000; // 10 minutes
+      broadcast(room, { t: "start" });
     }
+    if (room.state === "playing" && room.endAt && now >= room.endAt) {
+      room.state = "ended";
+    }
+
+    room.world.update(1 / balance.tickRate, now);
+
+    // leaderboard update
+    room.leaderboard.forEach(e => {
+      const cs = room.clients.get(e.id);
+      e.alive = !!(cs && cs.player && cs.player.hp > 0);
+    });
+
     const snap = room.world.snapshot();
-    const payload = JSON.stringify({ t: "snapshot", s: snap, room: room.id });
+    const payload = JSON.stringify({ t: "snapshot", s: snap, room: room.id, match: { state: room.state, countdownEndAt: room.countdownEndAt, endAt: room.endAt, leaderboard: room.leaderboard } });
     for (const c of room.clients.values()) {
       if (c.ws.readyState === c.ws.OPEN) c.ws.send(payload);
     }
@@ -276,7 +327,7 @@ function startRoomLoops(room: Room) {
       const s = room.clients.get(sid);
       if (s && s.ws.readyState === s.ws.OPEN) s.ws.send(payload);
     }
-  }, 1000 / balance.tickRate);
+  }, 1000 / getBalance().tickRate);
 
   setInterval(() => {
     const now = Date.now();
@@ -290,8 +341,8 @@ function startRoomLoops(room: Room) {
   }, 5000);
 }
 
-server.listen(PORT, () => {
-  console.log(`dragon-sons server listening on :${PORT}`);
+server.listen(Number(process.env.PORT ?? 8787), () => {
+  console.log(`dragon-sons server listening on :${Number(process.env.PORT ?? 8787)}`);
 });
 
 function pickRandom<T>(arr: readonly T[]): T {
