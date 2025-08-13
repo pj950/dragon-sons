@@ -7,7 +7,9 @@
   "scripts": {
     "dev": "ts-node src/index.ts",
     "build": "tsc -p tsconfig.json",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "start:dev": "CONFIG_PATH=dist/config/balance.json node dist/index.js",
+    "postinstall": "mkdir -p data || true"
   },
   "dependencies": {
     "@types/ws": "^8.18.1",

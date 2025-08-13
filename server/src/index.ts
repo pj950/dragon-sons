@@ -5,6 +5,7 @@ import { DEFAULT_ELEMENT_MATRIX } from "./game/elements";
 import type { Balance, Config, Player, Element, CharacterDef } from "./game/types";
 import { computeDamage } from "./game/combat";
 import { World } from "./game/world";
+import { initStore, loadLeaderboard, loadStats, saveLeaderboard, saveStats } from "./persist/store";
 
 // Room support (single default room + spectators)
 interface Room {
@@ -56,7 +57,8 @@ function pickCharacter(): CharacterDef {
   return list[Math.floor(Math.random() * list.length)];
 }
 
-wss.on("connection", (ws: WebSocket) => {
+wss.on("connection", async (ws: WebSocket) => {
+  await initStore();
   const clientId = generateId();
   const token = generateId();
   const room = getOrCreateRoom("default");
@@ -240,7 +242,9 @@ function handleMessage(room: Room, state: ClientState, msg: any) {
         { id: "basic", power: 1 }
       );
       if (!targetPlayer.player.invulnUntil || now >= targetPlayer.player.invulnUntil) {
+        const before = targetPlayer.player.hp;
         targetPlayer.player.hp = Math.max(0, targetPlayer.player.hp - damage);
+        if (before > 0 && targetPlayer.player.hp <= 0) addKill(room, state.id);
       }
       targetPlayer.ws.send(JSON.stringify({ t: "hit", from: state.id, damage, hp: targetPlayer.player.hp }));
       return;
@@ -294,8 +298,13 @@ function broadcast(room: Room, payload: any) {
   }
 }
 
+function addKill(room: Room, killerId: string) {
+  const e = room.leaderboard.find(x => x.id === killerId);
+  if (e) e.kills += 1;
+}
+
 function startRoomLoops(room: Room) {
-  setInterval(() => {
+  setInterval(async () => {
     const now = Date.now();
     const balance = getBalance();
     const cfg = getConfig();
@@ -308,6 +317,7 @@ function startRoomLoops(room: Room) {
     }
     if (room.state === "playing" && room.endAt && now >= room.endAt) {
       room.state = "ended";
+      await persistMatch(room);
     }
 
     room.world.update(1 / balance.tickRate, now);
@@ -339,6 +349,36 @@ function startRoomLoops(room: Room) {
       }
     }
   }, 5000);
+}
+
+async function persistMatch(room: Room) {
+  const stats = await loadStats();
+  // determine winner: alive highest kills else any alive
+  const alive = room.leaderboard.filter(e => e.alive);
+  let winner: string | undefined;
+  if (alive.length > 0) {
+    alive.sort((a, b) => b.kills - a.kills);
+    winner = alive[0].id;
+  } else if (room.leaderboard.length > 0) {
+    room.leaderboard.sort((a, b) => b.kills - a.kills);
+    winner = room.leaderboard[0].id;
+  }
+  for (const e of room.leaderboard) {
+    const s = stats[e.id] || { id: e.id, matches: 0, wins: 0, kills: 0 };
+    s.matches += 1;
+    s.kills += e.kills;
+    if (winner && e.id === winner) s.wins += 1;
+    stats[e.id] = s;
+  }
+  await saveStats(stats);
+  const leaders = await loadLeaderboard();
+  for (const s of Object.values(stats)) {
+    const idx = leaders.findIndex(l => l.id === s.id);
+    const entry = { id: s.id, wins: s.wins, kills: s.kills };
+    if (idx >= 0) leaders[idx] = entry; else leaders.push(entry);
+  }
+  leaders.sort((a, b) => (b.wins - a.wins) || (b.kills - a.kills));
+  await saveLeaderboard(leaders);
 }
 
 server.listen(Number(process.env.PORT ?? 8787), () => {
