@@ -1,5 +1,6 @@
 import { Balance, Element, EntityId, GroundFruit, GroundItem, Monster, Player, Position, WorldEntity } from "./types";
 import { ELEMENTS } from "./elements";
+import { applyFruit } from "./combat";
 
 export interface WorldState {
   tick: number;
@@ -58,18 +59,25 @@ export class World {
       const d2 = (e.x - p.x) ** 2 + (e.y - p.y) ** 2;
       if (d2 <= 1.0) {
         if (e.type === "fruit") {
-          // Convert to a flat attack gain for demo
-          p.fruitAtkFlat = Math.min(p.fruitAtkFlat + 8, 64);
+          applyFruit(p, { element: e.element, selfAtkFlat: 8, other: this.mapFruitOther(e.element) }, this.balance);
         } else if (e.type === "item") {
-          if (e.itemId === "invuln") p.invulnUntil = Date.now() + 5000;
-          if (e.itemId === "boots") {
-            p.speedUntil = Date.now() + 6000;
-            p.speedMultiplier = Math.max(p.speedMultiplier ?? 1, 2);
-          }
+          // add to bag instead of instant use
+          p.bag[e.itemId] = (p.bag[e.itemId] ?? 0) + 1;
         }
         this.state.entities.delete(id);
         break;
       }
+    }
+  }
+
+  private mapFruitOther(element: Element) {
+    // mimic config rules; could be refactored to read from config
+    switch (element) {
+      case "metal": return { critRatePct: 0.02, max: 0.12 };
+      case "wood": return { agiFlat: 5, max: 40 };
+      case "water": return { dodgePct: 0.02, max: 0.12 };
+      case "fire": return { critDmg: 0.10, max: 0.60 };
+      case "earth": return { defFlat: 8, max: 64 };
     }
   }
 

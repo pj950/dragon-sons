@@ -1,4 +1,4 @@
-import { Balance, Player, Skill, ElementMatrix, Element } from "./types";
+import { Balance, Player, Skill, ElementMatrix, Element, Fruit, FruitOther } from "./types";
 import { elementMultiplier, isCounter } from "./elements";
 
 export interface Ctx {
@@ -24,7 +24,7 @@ export function computeDamage(ctx: Ctx, atk: Player, def: Player, skill: Skill):
   return Math.max(1, Math.floor(damage));
 }
 
-export function applyFruit(player: Player, fruit: { element: Player["element"]; selfAtkFlat: number; other?: any }, bal: Balance) {
+export function applyFruit(player: Player, fruit: Fruit, bal: Balance) {
   const same = fruit.element === player.element;
   if (same) {
     const stacks = player.sameFruitStacks[fruit.element] ?? 0;
@@ -38,32 +38,43 @@ export function applyFruit(player: Player, fruit: { element: Player["element"]; 
   }
 }
 
-function grantSecondary(player: Player, other: any) {
+function grantSecondary(player: Player, other: FruitOther) {
+  const gains = player.fruitOtherGains ?? {};
+  const clamp = (value: number, max: number, current: number) => Math.max(0, Math.min(value, Math.max(0, max - current)));
+
   if (other.critRatePct) {
-    player.crit = Math.min(1, player.crit + other.critRatePct);
-    player.fruitOtherGains = { ...(player.fruitOtherGains ?? {}), critRatePct: (player.fruitOtherGains?.critRatePct ?? 0) + other.critRatePct };
+    const add = clamp(other.critRatePct, other.max, gains.critRatePct ?? 0);
+    player.crit = Math.min(1, player.crit + add);
+    gains.critRatePct = (gains.critRatePct ?? 0) + add;
   }
   if (other.critDmg) {
-    player.critDmg += other.critDmg;
-    player.fruitOtherGains = { ...(player.fruitOtherGains ?? {}), critDmg: (player.fruitOtherGains?.critDmg ?? 0) + other.critDmg };
+    const add = clamp(other.critDmg, other.max, gains.critDmg ?? 0);
+    player.critDmg += add;
+    gains.critDmg = (gains.critDmg ?? 0) + add;
   }
   if (other.defFlat) {
-    player.def += other.defFlat;
-    player.fruitOtherGains = { ...(player.fruitOtherGains ?? {}), defFlat: (player.fruitOtherGains?.defFlat ?? 0) + other.defFlat };
+    const add = clamp(other.defFlat, other.max, gains.defFlat ?? 0);
+    player.def += add;
+    gains.defFlat = (gains.defFlat ?? 0) + add;
   }
   if (other.agiFlat) {
-    player.agi += other.agiFlat;
-    player.fruitOtherGains = { ...(player.fruitOtherGains ?? {}), agiFlat: (player.fruitOtherGains?.agiFlat ?? 0) + other.agiFlat };
+    const add = clamp(other.agiFlat, other.max, gains.agiFlat ?? 0);
+    player.agi += add;
+    gains.agiFlat = (gains.agiFlat ?? 0) + add;
   }
   if (other.dodgePct) {
-    player.dodge = Math.min(1, player.dodge + other.dodgePct);
-    player.fruitOtherGains = { ...(player.fruitOtherGains ?? {}), dodgePct: (player.fruitOtherGains?.dodgePct ?? 0) + other.dodgePct };
+    const add = clamp(other.dodgePct, other.max, gains.dodgePct ?? 0);
+    player.dodge = Math.min(1, player.dodge + add);
+    gains.dodgePct = (gains.dodgePct ?? 0) + add;
   }
+
+  player.fruitOtherGains = gains;
 }
 
 function rollHit(ctx: Ctx, atk: Player, def: Player): boolean {
   const base = ctx.balance.baseHit;
   const agiDiff = (atk.agi - (def.agi ?? 100));
+  const aspdMul = Math.min(ctx.balance.aspdCap, 1 + (atk.agi - 100) * ctx.balance.agiAspdCoef);
   let hit = base + agiDiff * ctx.balance.agiHitCoef - (def.dodge ?? 0);
   hit = Math.max(ctx.balance.minHit, Math.min(ctx.balance.maxHit, hit));
   return roll(hit);

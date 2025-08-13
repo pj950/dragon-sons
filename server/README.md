@@ -23,3 +23,16 @@ npm start
 ```
 
 The server listens on port 8787 by default. Set `PORT` env to override.
+
+## Protocol (WIP)
+- Client -> Server
+  - `{ t: "ping" }`
+  - `{ t: "move", vx: number, vy: number }` (throttled ~30/s)
+  - `{ t: "pickup" }` (pick nearby entity)
+  - `{ t: "useItem", itemId: string }` (consumes from bag, obeys cooldown)
+  - `{ t: "attack", target: string }` (cooldown enforced)
+- Server -> Client
+  - `{ t: "pong" }`
+  - `{ t: "hello", id, element }`
+  - `{ t: "hit", from, damage, hp }`
+  - `{ t: "snapshot", s }` (world snapshot)

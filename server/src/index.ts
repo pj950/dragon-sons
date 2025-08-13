@@ -86,6 +86,9 @@ function handleMessage(state: ClientState, msg: any) {
     return;
   }
   if (msg?.t === "move") {
+    // throttle: max 30 move msgs per second per client
+    if ((state as any)._lastMoveAt && now - (state as any)._lastMoveAt < 33) return;
+    (state as any)._lastMoveAt = now;
     const { vx = 0, vy = 0 } = msg;
     state.player.vx = Math.max(-1, Math.min(1, Number(vx) || 0));
     state.player.vy = Math.max(-1, Math.min(1, Number(vy) || 0));
@@ -99,6 +102,8 @@ function handleMessage(state: ClientState, msg: any) {
     const item = config.items.find(i => i.id === msg.itemId);
     if (!item) return;
     if ((item.trigger ?? "onUse") !== "onUse") return;
+    const have = state.player.bag[item.id] ?? 0;
+    if (have <= 0) return;
     const next = state.player.cooldowns[item.id] ?? 0;
     if (now < next) return;
     // apply effect
@@ -108,9 +113,11 @@ function handleMessage(state: ClientState, msg: any) {
       state.player.speedMultiplier = Math.max(state.player.speedMultiplier ?? 1, item.multiplier ?? 2);
     }
     state.player.cooldowns[item.id] = now + (item.cooldown ?? 90) * 1000;
+    state.player.bag[item.id] = have - 1;
     return;
   }
   if (msg?.t === "attack" && typeof msg.target === "string") {
+    // throttle attacks by cooldown
     if (state.player.lastAttackAt && now - state.player.lastAttackAt < balance.attackCooldownMs) return;
     state.player.lastAttackAt = now;
     const target = clients.get(msg.target);
