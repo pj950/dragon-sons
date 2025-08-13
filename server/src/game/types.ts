@@ -21,6 +21,12 @@ export interface Balance {
   sameFruitDiminishRate: number;
   mobSpawnEvery: number;
   itemDropChance: number;
+  // new
+  baseHit: number; // base hit chance
+  agiHitCoef: number; // per agi diff impact on hit
+  minHit: number;
+  maxHit: number;
+  attackCooldownMs: number;
 }
 
 export interface FruitOther {
@@ -45,6 +51,7 @@ export interface Item {
   duration?: number;
   cooldown?: number;
   multiplier?: number;
+  trigger?: "onPickup" | "onUse";
 }
 
 export interface CharacterDef {
@@ -94,10 +101,24 @@ export interface Actor {
 export interface Player extends Actor, Position, Velocity {
   hp: number;
   maxHp: number;
+  agi: number;
+  dodge: number;
   sameFruitStacks: Partial<Record<Element, number>>;
   invulnUntil?: number;
   speedUntil?: number;
   speedMultiplier?: number;
+  // inventory & cooldowns
+  bag: Record<string, number>; // itemId -> count
+  cooldowns: Record<string, number>; // itemId -> nextAvailableAt ms
+  lastAttackAt?: number;
+  // fruit-derived caps tracking
+  fruitOtherGains?: {
+    critRatePct?: number;
+    agiFlat?: number;
+    dodgePct?: number;
+    critDmg?: number;
+    defFlat?: number;
+  };
 }
 
 export interface Skill {

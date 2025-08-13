@@ -73,6 +73,16 @@ export class World {
     }
   }
 
+  computeZoneElement(pos: Position): Element {
+    // Divide circle into 5 equal angular sectors starting from +X axis
+    const dx = pos.x - this.state.center.x;
+    const dy = pos.y - this.state.center.y;
+    let theta = Math.atan2(dy, dx); // -PI..PI
+    if (theta < 0) theta += Math.PI * 2; // 0..2PI
+    const sector = Math.floor((theta / (2 * Math.PI)) * 5) % 5;
+    return ELEMENTS[sector];
+  }
+
   private applyShrink(_dtSec: number) {
     const idx = this.state.nextShrinkIndex;
     if (idx >= this.balance.ringShrinkTimes.length) return;
@@ -90,6 +100,11 @@ export class World {
       const mult = (p.speedUntil && nowMs < p.speedUntil ? (p.speedMultiplier ?? 2) : 1);
       p.x += p.vx * baseSpeed * mult / this.balance.tickRate;
       p.y += p.vy * baseSpeed * mult / this.balance.tickRate;
+      // clamp to map bounds
+      p.x = Math.max(0, Math.min(this.cfg.width, p.x));
+      p.y = Math.max(0, Math.min(this.cfg.height, p.y));
+      // refresh zone element
+      p.zoneElement = this.computeZoneElement(p);
       // ring damage if outside
       const dx = p.x - this.state.center.x;
       const dy = p.y - this.state.center.y;
@@ -151,7 +166,7 @@ export class World {
       radius: this.state.radius,
       center: this.state.center,
       players: Array.from(this.state.players.values()).map(p => ({
-        id: p.id, x: p.x, y: p.y, hp: p.hp, maxHp: p.maxHp, element: p.element,
+        id: p.id, x: p.x, y: p.y, hp: p.hp, maxHp: p.maxHp, element: p.element, zone: p.zoneElement,
       })),
       entities: Array.from(this.state.entities.values()),
     };

@@ -1,4 +1,4 @@
-import { Balance, Player, Skill, ElementMatrix } from "./types";
+import { Balance, Player, Skill, ElementMatrix, Element } from "./types";
 import { elementMultiplier, isCounter } from "./elements";
 
 export interface Ctx {
@@ -7,7 +7,7 @@ export interface Ctx {
 }
 
 export function computeDamage(ctx: Ctx, atk: Player, def: Player, skill: Skill): number {
-  if (!rollHit(atk, def, ctx)) return 0;
+  if (!rollHit(ctx, atk, def)) return 0;
 
   const zoneAtkMul = atk.zoneElement === atk.element ? 1 + ctx.balance.zoneBuffAtkPct : 1;
   const zoneDefMul = def.zoneElement && isCounter(def.zoneElement, def.element, ctx.elementMatrix)
@@ -41,19 +41,32 @@ export function applyFruit(player: Player, fruit: { element: Player["element"]; 
 function grantSecondary(player: Player, other: any) {
   if (other.critRatePct) {
     player.crit = Math.min(1, player.crit + other.critRatePct);
+    player.fruitOtherGains = { ...(player.fruitOtherGains ?? {}), critRatePct: (player.fruitOtherGains?.critRatePct ?? 0) + other.critRatePct };
   }
   if (other.critDmg) {
     player.critDmg += other.critDmg;
+    player.fruitOtherGains = { ...(player.fruitOtherGains ?? {}), critDmg: (player.fruitOtherGains?.critDmg ?? 0) + other.critDmg };
   }
   if (other.defFlat) {
     player.def += other.defFlat;
+    player.fruitOtherGains = { ...(player.fruitOtherGains ?? {}), defFlat: (player.fruitOtherGains?.defFlat ?? 0) + other.defFlat };
   }
-  // agiFlat、dodgePct 等属性在此处可按需要扩展到 Player 类型
+  if (other.agiFlat) {
+    player.agi += other.agiFlat;
+    player.fruitOtherGains = { ...(player.fruitOtherGains ?? {}), agiFlat: (player.fruitOtherGains?.agiFlat ?? 0) + other.agiFlat };
+  }
+  if (other.dodgePct) {
+    player.dodge = Math.min(1, player.dodge + other.dodgePct);
+    player.fruitOtherGains = { ...(player.fruitOtherGains ?? {}), dodgePct: (player.fruitOtherGains?.dodgePct ?? 0) + other.dodgePct };
+  }
 }
 
-function rollHit(_atk: Player, _def: Player, _ctx: Ctx): boolean {
-  // 简化：基础命中 90%
-  return roll(0.9);
+function rollHit(ctx: Ctx, atk: Player, def: Player): boolean {
+  const base = ctx.balance.baseHit;
+  const agiDiff = (atk.agi - (def.agi ?? 100));
+  let hit = base + agiDiff * ctx.balance.agiHitCoef - (def.dodge ?? 0);
+  hit = Math.max(ctx.balance.minHit, Math.min(ctx.balance.maxHit, hit));
+  return roll(hit);
 }
 
 function roll(prob: number): boolean {

@@ -2,7 +2,7 @@ import http from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import configJson from "./config/balance.json";
 import { DEFAULT_ELEMENT_MATRIX } from "./game/elements";
-import type { Balance, Config, Player, Element } from "./game/types";
+import type { Balance, Config, Player, Element, CharacterDef } from "./game/types";
 import { computeDamage } from "./game/combat";
 import { World } from "./game/world";
 
@@ -25,16 +25,25 @@ interface ClientState {
 
 const clients = new Map<string, ClientState>();
 
+function pickCharacter(): CharacterDef {
+  const list = config.characters;
+  return list[Math.floor(Math.random() * list.length)];
+}
+
 wss.on("connection", (ws: WebSocket) => {
   const id = generateId();
+  const baseChar = pickCharacter();
+  const element: Element = (baseChar.element === "random" ? pickRandom(config.elements) : baseChar.element) as Element;
   const player: Player = {
     id,
-    element: pickRandom(config.elements) as Element,
-    baseAtk: 100,
+    element,
+    baseAtk: baseChar.atk,
     fruitAtkFlat: 0,
-    def: 80,
-    crit: 0.1,
-    critDmg: 1.5,
+    def: baseChar.def,
+    crit: baseChar.crit,
+    critDmg: baseChar.critDmg,
+    agi: baseChar.agi,
+    dodge: baseChar.dodge,
     sameFruitStacks: {},
     x: Math.random() * 100,
     y: Math.random() * 100,
@@ -43,7 +52,10 @@ wss.on("connection", (ws: WebSocket) => {
     hp: 100,
     maxHp: 100,
     speedMultiplier: 1,
+    bag: {},
+    cooldowns: {},
   };
+  player.zoneElement = world.computeZoneElement(player);
 
   const state: ClientState = { id, ws, player, lastPing: Date.now() };
   clients.set(id, state);
@@ -67,8 +79,9 @@ wss.on("connection", (ws: WebSocket) => {
 });
 
 function handleMessage(state: ClientState, msg: any) {
+  const now = Date.now();
   if (msg?.t === "ping") {
-    state.lastPing = Date.now();
+    state.lastPing = now;
     state.ws.send(JSON.stringify({ t: "pong" }));
     return;
   }
@@ -82,7 +95,24 @@ function handleMessage(state: ClientState, msg: any) {
     world.handlePickup(state.id);
     return;
   }
+  if (msg?.t === "useItem" && typeof msg.itemId === "string") {
+    const item = config.items.find(i => i.id === msg.itemId);
+    if (!item) return;
+    if ((item.trigger ?? "onUse") !== "onUse") return;
+    const next = state.player.cooldowns[item.id] ?? 0;
+    if (now < next) return;
+    // apply effect
+    if (item.type === "invulnerable") state.player.invulnUntil = now + (item.duration ?? 5) * 1000;
+    if (item.type === "speed") {
+      state.player.speedUntil = now + (item.duration ?? 6) * 1000;
+      state.player.speedMultiplier = Math.max(state.player.speedMultiplier ?? 1, item.multiplier ?? 2);
+    }
+    state.player.cooldowns[item.id] = now + (item.cooldown ?? 90) * 1000;
+    return;
+  }
   if (msg?.t === "attack" && typeof msg.target === "string") {
+    if (state.player.lastAttackAt && now - state.player.lastAttackAt < balance.attackCooldownMs) return;
+    state.player.lastAttackAt = now;
     const target = clients.get(msg.target);
     if (!target) return;
     const damage = computeDamage(
@@ -91,10 +121,11 @@ function handleMessage(state: ClientState, msg: any) {
       target.player,
       { id: "basic", power: 1 }
     );
-    if (!target.player.invulnUntil || Date.now() >= target.player.invulnUntil) {
+    if (!target.player.invulnUntil || now >= target.player.invulnUntil) {
       target.player.hp = Math.max(0, target.player.hp - damage);
     }
     target.ws.send(JSON.stringify({ t: "hit", from: state.id, damage, hp: target.player.hp }));
+    return;
   }
 }
 

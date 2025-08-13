@@ -19,8 +19,8 @@
     { "element": "earth", "selfAtkFlat": 8, "other": { "defFlat": 8, "max": 64 } }
   ],
   "items": [
-    { "id": "invuln", "name": "金钟罩", "duration": 5, "cooldown": 90, "type": "invulnerable" },
-    { "id": "boots", "name": "神行鞋", "duration": 6, "cooldown": 90, "type": "speed", "multiplier": 2 }
+    { "id": "invuln", "name": "金钟罩", "duration": 5, "cooldown": 90, "type": "invulnerable", "trigger": "onUse" },
+    { "id": "boots", "name": "神行鞋", "duration": 6, "cooldown": 90, "type": "speed", "multiplier": 2, "trigger": "onUse" }
   ],
   "balance": {
     "tickRate": 20,
@@ -40,6 +40,11 @@
     "sameFruitDiminishStart": 5,
     "sameFruitDiminishRate": 0.7,
     "mobSpawnEvery": 20,
-    "itemDropChance": 0.1
+    "itemDropChance": 0.1,
+    "baseHit": 0.9,
+    "agiHitCoef": 0.0015,
+    "minHit": 0.4,
+    "maxHit": 1.0,
+    "attackCooldownMs": 600
   }
 }
