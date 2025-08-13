@@ -142,3 +142,11 @@ function applyFruit(player: Player, fruit: Fruit, bal: Balance) {
 - 可选技术栈：客户端 Unity/Unreal/Phaser；服务端 Node.js + WebSocket/Colyseus
 
 如需，我可在本仓库直接生成服务端（TypeScript，权威服）与客户端样例场景的骨架工程，开箱即跑。
+
+### 进度与路线图
+- 请见 `ROADMAP.md` 获取完整的实现清单与进度勾选，以及优先排期：
+  - 角色差异化初始面板
+  - 元素水果的完整二级属性与上限、同元素递减
+  - 区域元素判定与同区增益/被克减益
+  - 更多道具与冷却、状态同步与去抖
+  - 房间匹配/观战、持久化与部署脚本
