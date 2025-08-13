@@ -23,6 +23,9 @@
     { "id": "boots", "name": "神行鞋", "duration": 6, "cooldown": 90, "type": "speed", "multiplier": 2, "trigger": "onUse" },
     { "id": "potion", "name": "疗愈丹", "type": "heal", "healAmount": 40, "cooldown": 30, "trigger": "onUse" }
   ],
+  "skills": [
+    { "id": "slash", "name": "重斩", "power": 1.6, "cooldownMs": 4000, "castMs": 500 }
+  ],
   "balance": {
     "tickRate": 20,
     "baseMove": 5,

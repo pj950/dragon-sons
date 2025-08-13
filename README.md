@@ -150,3 +150,10 @@ function applyFruit(player: Player, fruit: Fruit, bal: Balance) {
   - 区域元素判定与同区增益/被克减益
   - 更多道具与冷却、状态同步与去抖
   - 房间匹配/观战、持久化与部署脚本
+
+### 部署
+- Docker 构建运行：
+```bash
+docker build -t dragon-sons-server .
+docker run --rm -p 8787:8787 dragon-sons-server
+```

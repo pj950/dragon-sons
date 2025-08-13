@@ -27,12 +27,16 @@ The server listens on port 8787 by default. Set `PORT` env to override.
 ## Protocol (WIP)
 - Client -> Server
   - `{ t: "ping" }`
+  - `{ t: "spectate" }` 切入观战（当前默认房间）
   - `{ t: "move", vx: number, vy: number }` (throttled ~30/s)
   - `{ t: "pickup" }` (pick nearby entity)
   - `{ t: "useItem", itemId: string }` (consumes from bag, obeys cooldown)
-  - `{ t: "attack", target: string }` (cooldown enforced)
+  - `{ t: "assignSlot", slot: number, itemId: string }`
+  - `{ t: "useSlot", slot: number }`
+  - `{ t: "attack", target: string }` (cooldown enforced; agility scales)
+  - `{ t: "cast", skillId: string, target: string }` (有前摇与冷却)
 - Server -> Client
   - `{ t: "pong" }`
-  - `{ t: "hello", id, element }`
-  - `{ t: "hit", from, damage, hp }`
-  - `{ t: "snapshot", s }` (world snapshot)
+  - `{ t: "hello", id, element, room }`
+  - `{ t: "hit", from, damage, hp, skill? }`
+  - `{ t: "snapshot", s, room }` (world snapshot)

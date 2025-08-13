@@ -56,6 +56,14 @@ export interface Item {
   healAmount?: number;
 }
 
+export interface SkillDef {
+  id: string;
+  name: string;
+  power: number;
+  cooldownMs: number;
+  castMs: number;
+}
+
 export interface CharacterDef {
   id: string;
   name: string;
@@ -74,6 +82,7 @@ export interface Config {
   characters: CharacterDef[];
   fruits: Fruit[];
   items: Item[];
+  skills: SkillDef[];
   balance: Balance;
 }
 
@@ -111,7 +120,7 @@ export interface Player extends Actor, Position, Velocity {
   speedMultiplier?: number;
   // inventory & cooldowns
   bag: Record<string, number>; // itemId -> count
-  cooldowns: Record<string, number>; // itemId -> nextAvailableAt ms
+  cooldowns: Record<string, number>; // itemId/skill key -> nextAvailableAt ms
   lastAttackAt?: number;
   // fruit-derived caps tracking
   fruitOtherGains?: {
@@ -123,6 +132,8 @@ export interface Player extends Actor, Position, Velocity {
   };
   // item slots
   slots: (string | null)[];
+  // skill casting
+  casting?: { skillId: string; targetId?: string; endAt: number };
 }
 
 export interface Skill {
