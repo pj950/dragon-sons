@@ -111,12 +111,39 @@ function handleMessage(room: Room, state: ClientState, msg: any) {
     state.ws.send(JSON.stringify({ t: "pong" }));
     return;
   }
+  if (msg?.t === "rooms") {
+    state.ws.send(JSON.stringify({ t: "rooms", rooms: Array.from(rooms.keys()) }));
+    return;
+  }
+  if (msg?.t === "createRoom" && typeof msg.id === "string") {
+    if (rooms.has(msg.id)) return;
+    getOrCreateRoom(msg.id);
+    state.ws.send(JSON.stringify({ t: "roomCreated", id: msg.id }));
+    return;
+  }
+  if (msg?.t === "joinRoom" && typeof msg.id === "string") {
+    const r = rooms.get(msg.id);
+    if (!r) return;
+    if ((r.clients.size) >= (balance.roomCapacity ?? 16)) return;
+    // remove from current
+    const cur = rooms.get(state.roomId);
+    if (cur) {
+      cur.clients.delete(state.id);
+      if (state.player) cur.world.removePlayer(state.id);
+    }
+    // add to new room
+    state.roomId = r.id;
+    r.clients.set(state.id, state);
+    if (state.player) r.world.addPlayer(state.player);
+    state.ws.send(JSON.stringify({ t: "joined", id: r.id }));
+    return;
+  }
   if (msg?.t === "spectate") {
     room.spectators.add(state.id);
     state.player = null;
     return;
   }
-  if (!state.player) return; // spectators ignore gameplay messages
+  if (!state.player) return;
 
   if (msg?.t === "move") {
     if ((state as any)._lastMoveAt && now - (state as any)._lastMoveAt < 33) return;
@@ -153,18 +180,27 @@ function handleMessage(room: Room, state: ClientState, msg: any) {
     const cdMs = Math.max(100, Math.floor(balance.attackCooldownMs / aspdMul));
     if (state.player.lastAttackAt && now - state.player.lastAttackAt < cdMs) return;
     state.player.lastAttackAt = now;
-    const target = room.clients.get(msg.target);
-    if (!target || !target.player) return;
-    const damage = computeDamage(
-      { elementMatrix: DEFAULT_ELEMENT_MATRIX, balance },
-      state.player,
-      target.player,
-      { id: "basic", power: 1 }
-    );
-    if (!target.player.invulnUntil || now >= target.player.invulnUntil) {
-      target.player.hp = Math.max(0, target.player.hp - damage);
+    const targetPlayer = room.clients.get(msg.target);
+    if (targetPlayer && targetPlayer.player) {
+      const damage = computeDamage(
+        { elementMatrix: DEFAULT_ELEMENT_MATRIX, balance },
+        state.player,
+        targetPlayer.player,
+        { id: "basic", power: 1 }
+      );
+      if (!targetPlayer.player.invulnUntil || now >= targetPlayer.player.invulnUntil) {
+        targetPlayer.player.hp = Math.max(0, targetPlayer.player.hp - damage);
+      }
+      targetPlayer.ws.send(JSON.stringify({ t: "hit", from: state.id, damage, hp: targetPlayer.player.hp }));
+      return;
     }
-    target.ws.send(JSON.stringify({ t: "hit", from: state.id, damage, hp: target.player.hp }));
+    // if not a player id, try monster entity id
+    const ent = room.world.state.entities.get(msg.target);
+    if (ent && ent.type === "monster") {
+      const damage = Math.max(1, state.player.baseAtk + state.player.fruitAtkFlat);
+      room.world.damageMonster(ent.id, damage);
+      return;
+    }
     return;
   }
   if (msg?.t === "cast" && typeof msg.skillId === "string" && typeof msg.target === "string") {
@@ -172,7 +208,6 @@ function handleMessage(room: Room, state: ClientState, msg: any) {
     if (!skill) return;
     const next = state.player.cooldowns[skill.id] ?? 0;
     if (now < next) return;
-    // casting time reduced by agility
     const castMul = 1 - Math.min(balance.castCap, Math.max(0, (state.player.agi - 100) * balance.agiCastCoef));
     const castMs = Math.max(50, Math.floor(skill.castMs * castMul));
     state.player.casting = { skillId: skill.id, targetId: String(msg.target), endAt: now + castMs };
@@ -202,33 +237,36 @@ function handleUseItem(state: ClientState, msg: { itemId: string }, now: number)
 }
 
 function startRoomLoops(room: Room) {
-  // world loop and snapshot broadcast
   setInterval(() => {
     const now = Date.now();
     room.world.update(1 / balance.tickRate, now);
-    // resolve casts
     for (const cs of room.clients.values()) {
       const p = cs.player;
       if (!p || !p.casting) continue;
       if (now >= p.casting.endAt) {
         const skill = config.skills.find(s => s.id === p.casting!.skillId);
-        const target = room.clients.get(p.casting!.targetId || "");
-        if (skill && target && target.player) {
+        const targetPlayer = room.clients.get(p.casting!.targetId || "");
+        if (skill && targetPlayer && targetPlayer.player) {
           const damage = computeDamage(
             { elementMatrix: DEFAULT_ELEMENT_MATRIX, balance },
             p,
-            target.player,
+            targetPlayer.player,
             { id: skill.id, power: skill.power }
           );
-          if (!target.player.invulnUntil || now >= target.player.invulnUntil) {
-            target.player.hp = Math.max(0, target.player.hp - damage);
+          if (!targetPlayer.player.invulnUntil || now >= targetPlayer.player.invulnUntil) {
+            targetPlayer.player.hp = Math.max(0, targetPlayer.player.hp - damage);
           }
-          target.ws.send(JSON.stringify({ t: "hit", from: p.id, skill: skill.id, damage, hp: target.player.hp }));
+          targetPlayer.ws.send(JSON.stringify({ t: "hit", from: p.id, skill: skill.id, damage, hp: targetPlayer.player.hp }));
+        } else if (skill) {
+          const ent = room.world.state.entities.get(p.casting!.targetId || "");
+          if (ent && ent.type === "monster") {
+            const damage = Math.max(1, Math.floor((p.baseAtk + p.fruitAtkFlat) * skill.power));
+            room.world.damageMonster(ent.id, damage);
+          }
         }
         p.casting = undefined;
       }
     }
-
     const snap = room.world.snapshot();
     const payload = JSON.stringify({ t: "snapshot", s: snap, room: room.id });
     for (const c of room.clients.values()) {
@@ -240,7 +278,6 @@ function startRoomLoops(room: Room) {
     }
   }, 1000 / balance.tickRate);
 
-  // liveness check
   setInterval(() => {
     const now = Date.now();
     for (const s of room.clients.values()) {

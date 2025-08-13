@@ -27,16 +27,22 @@ The server listens on port 8787 by default. Set `PORT` env to override.
 ## Protocol (WIP)
 - Client -> Server
   - `{ t: "ping" }`
-  - `{ t: "spectate" }` 切入观战（当前默认房间）
+  - `{ t: "rooms" }` 获取房间列表
+  - `{ t: "createRoom", id: string }` 创建房间
+  - `{ t: "joinRoom", id: string }` 加入房间（容量限制）
+  - `{ t: "spectate" }` 切入观战
   - `{ t: "move", vx: number, vy: number }` (throttled ~30/s)
-  - `{ t: "pickup" }` (pick nearby entity)
-  - `{ t: "useItem", itemId: string }` (consumes from bag, obeys cooldown)
+  - `{ t: "pickup" }`
+  - `{ t: "useItem", itemId: string }`
   - `{ t: "assignSlot", slot: number, itemId: string }`
   - `{ t: "useSlot", slot: number }`
-  - `{ t: "attack", target: string }` (cooldown enforced; agility scales)
-  - `{ t: "cast", skillId: string, target: string }` (有前摇与冷却)
+  - `{ t: "attack", target: string }` 目标可为玩家ID或怪物实体ID
+  - `{ t: "cast", skillId: string, target: string }` 目标可为玩家ID或怪物实体ID
 - Server -> Client
   - `{ t: "pong" }`
   - `{ t: "hello", id, element, room }`
+  - `{ t: "rooms", rooms: string[] }`
+  - `{ t: "roomCreated", id }`
+  - `{ t: "joined", id }`
   - `{ t: "hit", from, damage, hp, skill? }`
-  - `{ t: "snapshot", s, room }` (world snapshot)
+  - `{ t: "snapshot", s, room }`

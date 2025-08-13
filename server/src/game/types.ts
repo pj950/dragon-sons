@@ -28,6 +28,15 @@ export interface Balance {
   maxHit: number;
   attackCooldownMs: number;
   slotCount?: number;
+  // monster
+  monsterSpeed?: number;
+  monsterAggroRange?: number;
+  monsterAttackRange?: number;
+  monsterAttackCooldownMs?: number;
+  monsterDamage?: number;
+  monsterDef?: number;
+  // rooms
+  roomCapacity?: number;
 }
 
 export interface FruitOther {
@@ -136,6 +145,12 @@ export interface Player extends Actor, Position, Velocity {
   casting?: { skillId: string; targetId?: string; endAt: number };
 }
 
+export interface Defender {
+  element: Element;
+  zoneElement?: Element;
+  def: number;
+}
+
 export interface Skill {
   id: string;
   power: number; // skill damage coefficient
@@ -159,6 +174,10 @@ export interface Monster extends Position {
   element: Element;
   hp: number;
   maxHp: number;
+  def: number;
+  lastAttackAt: number;
+  mvx: number;
+  mvy: number;
 }
 
 export type WorldEntity = GroundFruit | GroundItem | Monster;

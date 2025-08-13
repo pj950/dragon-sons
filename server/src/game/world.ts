@@ -49,6 +49,7 @@ export class World {
     this.state.tick += 1;
     this.applyShrink(dtSec);
     this.updatePlayers(dtSec, nowMs);
+    this.updateMonsters(nowMs);
     this.spawnMobsIfNeeded();
   }
 
@@ -61,7 +62,6 @@ export class World {
         if (e.type === "fruit") {
           applyFruit(p, { element: e.element, selfAtkFlat: 8, other: this.mapFruitOther(e.element) }, this.balance);
         } else if (e.type === "item") {
-          // add to bag instead of instant use
           p.bag[e.itemId] = (p.bag[e.itemId] ?? 0) + 1;
         }
         this.state.entities.delete(id);
@@ -70,23 +70,11 @@ export class World {
     }
   }
 
-  private mapFruitOther(element: Element) {
-    // mimic config rules; could be refactored to read from config
-    switch (element) {
-      case "metal": return { critRatePct: 0.02, max: 0.12 };
-      case "wood": return { agiFlat: 5, max: 40 };
-      case "water": return { dodgePct: 0.02, max: 0.12 };
-      case "fire": return { critDmg: 0.10, max: 0.60 };
-      case "earth": return { defFlat: 8, max: 64 };
-    }
-  }
-
   computeZoneElement(pos: Position): Element {
-    // Divide circle into 5 equal angular sectors starting from +X axis
     const dx = pos.x - this.state.center.x;
     const dy = pos.y - this.state.center.y;
-    let theta = Math.atan2(dy, dx); // -PI..PI
-    if (theta < 0) theta += Math.PI * 2; // 0..2PI
+    let theta = Math.atan2(dy, dx);
+    if (theta < 0) theta += Math.PI * 2;
     const sector = Math.floor((theta / (2 * Math.PI)) * 5) % 5;
     return ELEMENTS[sector];
   }
@@ -109,12 +97,9 @@ export class World {
       const speed = Math.max(0, baseSpeed) * mult;
       p.x += p.vx * speed / this.balance.tickRate;
       p.y += p.vy * speed / this.balance.tickRate;
-      // clamp to map bounds
       p.x = Math.max(0, Math.min(this.cfg.width, p.x));
       p.y = Math.max(0, Math.min(this.cfg.height, p.y));
-      // refresh zone element
       p.zoneElement = this.computeZoneElement(p);
-      // ring damage if outside
       const dx = p.x - this.state.center.x;
       const dy = p.y - this.state.center.y;
       const dist = Math.hypot(dx, dy);
@@ -131,6 +116,56 @@ export class World {
     }
   }
 
+  private updateMonsters(nowMs: number) {
+    const spd = this.balance.monsterSpeed ?? 2;
+    const aggro = this.balance.monsterAggroRange ?? 10;
+    const atkRange = this.balance.monsterAttackRange ?? 1.5;
+    const atkCd = this.balance.monsterAttackCooldownMs ?? 1200;
+    const dmg = this.balance.monsterDamage ?? 10;
+
+    for (const e of this.state.entities.values()) {
+      if (e.type !== "monster") continue;
+      let nearest: Player | null = null;
+      let nd2 = Infinity;
+      for (const p of this.state.players.values()) {
+        const d2 = (p.x - e.x) ** 2 + (p.y - e.y) ** 2;
+        if (d2 < nd2) { nd2 = d2; nearest = p; }
+      }
+      if (!nearest) continue;
+      const dist = Math.sqrt(nd2);
+      if (dist <= aggro) {
+        const dirx = (nearest.x - e.x) / (dist || 1);
+        const diry = (nearest.y - e.y) / (dist || 1);
+        e.x += dirx * spd / this.balance.tickRate;
+        e.y += diry * spd / this.balance.tickRate;
+        if (dist <= atkRange && nowMs - e.lastAttackAt >= atkCd) {
+          e.lastAttackAt = nowMs;
+          nearest.hp = Math.max(0, nearest.hp - dmg);
+        }
+      }
+    }
+
+    // cleanup dead monsters and drop
+    const toDelete: string[] = [];
+    for (const [id, ent] of this.state.entities) {
+      if (ent.type === "monster" && ent.hp <= 0) {
+        toDelete.push(id);
+        // drop fruit
+        const f: GroundFruit = {
+          id: uid(), type: "fruit", element: ent.element,
+          x: ent.x, y: ent.y,
+        };
+        this.state.entities.set(f.id, f);
+        // roll item
+        if (Math.random() < (this.balance.itemDropChance ?? 0.1)) {
+          const it: GroundItem = { id: uid(), type: "item", itemId: Math.random() < 0.5 ? "invuln" : "boots", x: ent.x, y: ent.y };
+          this.state.entities.set(it.id, it);
+        }
+      }
+    }
+    for (const id of toDelete) this.state.entities.delete(id);
+  }
+
   private spawnMobsIfNeeded() {
     const tSec = this.state.tick / this.balance.tickRate;
     if (tSec - this.state.lastMobSpawnAt < this.balance.mobSpawnEvery) return;
@@ -144,29 +179,21 @@ export class World {
         y: this.randomBetween(0, this.cfg.height),
         hp: 50,
         maxHp: 50,
+        def: this.balance.monsterDef ?? 40,
+        lastAttackAt: 0,
+        mvx: 0,
+        mvy: 0,
       };
       this.state.entities.set(m.id, m);
-      // also drop a fruit next to it (for demo)
-      const f: GroundFruit = {
-        id: uid(),
-        type: "fruit",
-        element: m.element,
-        x: Math.max(0, Math.min(this.cfg.width, m.x + (Math.random() - 0.5) * 2)),
-        y: Math.max(0, Math.min(this.cfg.height, m.y + (Math.random() - 0.5) * 2)),
-      };
-      this.state.entities.set(f.id, f);
-      // 10% item
-      if (Math.random() < this.balance.itemDropChance) {
-        const it: GroundItem = {
-          id: uid(),
-          type: "item",
-          itemId: Math.random() < 0.5 ? "invuln" : "boots",
-          x: Math.max(0, Math.min(this.cfg.width, m.x + (Math.random() - 0.5) * 4)),
-          y: Math.max(0, Math.min(this.cfg.height, m.y + (Math.random() - 0.5) * 4)),
-        };
-        this.state.entities.set(it.id, it);
-      }
     }
+  }
+
+  damageMonster(monsterId: string, amount: number) {
+    const m = this.state.entities.get(monsterId);
+    if (!m || m.type !== "monster") return;
+    // simple mitigation by def
+    const mit = 1 - (m.def / (m.def + (this.balance.kDef || 100)));
+    m.hp = Math.max(0, m.hp - Math.max(1, Math.floor(amount * mit)));
   }
 
   snapshot() {
@@ -179,6 +206,16 @@ export class World {
       })),
       entities: Array.from(this.state.entities.values()),
     };
+  }
+
+  private mapFruitOther(element: Element) {
+    switch (element) {
+      case "metal": return { critRatePct: 0.02, max: 0.12 };
+      case "wood": return { agiFlat: 5, max: 40 };
+      case "water": return { dodgePct: 0.02, max: 0.12 };
+      case "fire": return { critDmg: 0.10, max: 0.60 };
+      case "earth": return { defFlat: 8, max: 64 };
+    }
   }
 
   private randomBetween(a: number, b: number): number {
