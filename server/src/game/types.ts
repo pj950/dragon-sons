@@ -68,6 +68,18 @@ export interface Config {
   balance: Balance;
 }
 
+export type EntityId = string;
+
+export interface Position {
+  x: number;
+  y: number;
+}
+
+export interface Velocity {
+  vx: number;
+  vy: number;
+}
+
 export interface Actor {
   id: string;
   element: Element;
@@ -79,11 +91,38 @@ export interface Actor {
   critDmg: number; // >=1
 }
 
-export interface Player extends Actor {
+export interface Player extends Actor, Position, Velocity {
+  hp: number;
+  maxHp: number;
   sameFruitStacks: Partial<Record<Element, number>>;
+  invulnUntil?: number;
+  speedUntil?: number;
+  speedMultiplier?: number;
 }
 
 export interface Skill {
   id: string;
   power: number; // skill damage coefficient
 }
+
+export interface GroundFruit extends Position {
+  id: EntityId;
+  type: "fruit";
+  element: Element;
+}
+
+export interface GroundItem extends Position {
+  id: EntityId;
+  type: "item";
+  itemId: string; // matches Config.items.id
+}
+
+export interface Monster extends Position {
+  id: EntityId;
+  type: "monster";
+  element: Element;
+  hp: number;
+  maxHp: number;
+}
+
+export type WorldEntity = GroundFruit | GroundItem | Monster;
