@@ -20,7 +20,8 @@
   ],
   "items": [
     { "id": "invuln", "name": "金钟罩", "duration": 5, "cooldown": 90, "type": "invulnerable", "trigger": "onUse" },
-    { "id": "boots", "name": "神行鞋", "duration": 6, "cooldown": 90, "type": "speed", "multiplier": 2, "trigger": "onUse" }
+    { "id": "boots", "name": "神行鞋", "duration": 6, "cooldown": 90, "type": "speed", "multiplier": 2, "trigger": "onUse" },
+    { "id": "potion", "name": "疗愈丹", "type": "heal", "healAmount": 40, "cooldown": 30, "trigger": "onUse" }
   ],
   "balance": {
     "tickRate": 20,
@@ -45,6 +46,7 @@
     "agiHitCoef": 0.0015,
     "minHit": 0.4,
     "maxHit": 1.0,
-    "attackCooldownMs": 600
+    "attackCooldownMs": 600,
+    "slotCount": 3
   }
 }

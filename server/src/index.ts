@@ -54,6 +54,7 @@ wss.on("connection", (ws: WebSocket) => {
     speedMultiplier: 1,
     bag: {},
     cooldowns: {},
+    slots: new Array(balance.slotCount ?? 3).fill(null),
   };
   player.zoneElement = world.computeZoneElement(player);
 
@@ -98,27 +99,29 @@ function handleMessage(state: ClientState, msg: any) {
     world.handlePickup(state.id);
     return;
   }
-  if (msg?.t === "useItem" && typeof msg.itemId === "string") {
-    const item = config.items.find(i => i.id === msg.itemId);
-    if (!item) return;
-    if ((item.trigger ?? "onUse") !== "onUse") return;
-    const have = state.player.bag[item.id] ?? 0;
-    if (have <= 0) return;
-    const next = state.player.cooldowns[item.id] ?? 0;
-    if (now < next) return;
-    // apply effect
-    if (item.type === "invulnerable") state.player.invulnUntil = now + (item.duration ?? 5) * 1000;
-    if (item.type === "speed") {
-      state.player.speedUntil = now + (item.duration ?? 6) * 1000;
-      state.player.speedMultiplier = Math.max(state.player.speedMultiplier ?? 1, item.multiplier ?? 2);
-    }
-    state.player.cooldowns[item.id] = now + (item.cooldown ?? 90) * 1000;
-    state.player.bag[item.id] = have - 1;
+  if (msg?.t === "assignSlot" && typeof msg.slot === "number" && typeof msg.itemId === "string") {
+    const idx = msg.slot | 0;
+    if (idx < 0 || idx >= state.player.slots.length) return;
+    const count = state.player.bag[msg.itemId] ?? 0;
+    if (count <= 0) return;
+    state.player.slots[idx] = msg.itemId;
     return;
   }
+  if (msg?.t === "useSlot" && typeof msg.slot === "number") {
+    const idx = msg.slot | 0;
+    if (idx < 0 || idx >= state.player.slots.length) return;
+    const itemId = state.player.slots[idx];
+    if (!itemId) return;
+    return handleUseItem(state, { itemId }, now);
+  }
+  if (msg?.t === "useItem" && typeof msg.itemId === "string") {
+    return handleUseItem(state, { itemId: msg.itemId }, now);
+  }
   if (msg?.t === "attack" && typeof msg.target === "string") {
-    // throttle attacks by cooldown
-    if (state.player.lastAttackAt && now - state.player.lastAttackAt < balance.attackCooldownMs) return;
+    // dynamic cooldown scales with agility (faster with higher agi)
+    const aspdMul = Math.min(balance.aspdCap, 1 + (state.player.agi - 100) * balance.agiAspdCoef);
+    const cdMs = Math.max(100, Math.floor(balance.attackCooldownMs / aspdMul));
+    if (state.player.lastAttackAt && now - state.player.lastAttackAt < cdMs) return;
     state.player.lastAttackAt = now;
     const target = clients.get(msg.target);
     if (!target) return;
@@ -134,6 +137,26 @@ function handleMessage(state: ClientState, msg: any) {
     target.ws.send(JSON.stringify({ t: "hit", from: state.id, damage, hp: target.player.hp }));
     return;
   }
+}
+
+function handleUseItem(state: ClientState, msg: { itemId: string }, now: number) {
+  const item = config.items.find(i => i.id === msg.itemId);
+  if (!item) return;
+  if ((item.trigger ?? "onUse") !== "onUse") return;
+  const have = state.player.bag[item.id] ?? 0;
+  if (have <= 0) return;
+  const next = state.player.cooldowns[item.id] ?? 0;
+  if (now < next) return;
+  if (item.type === "invulnerable") state.player.invulnUntil = now + (item.duration ?? 5) * 1000;
+  if (item.type === "speed") {
+    state.player.speedUntil = now + (item.duration ?? 6) * 1000;
+    state.player.speedMultiplier = Math.max(state.player.speedMultiplier ?? 1, item.multiplier ?? 2);
+  }
+  if (item.type === "heal") {
+    state.player.hp = Math.min(state.player.maxHp, state.player.hp + (item.healAmount ?? 30));
+  }
+  state.player.cooldowns[item.id] = now + (item.cooldown ?? 90) * 1000;
+  state.player.bag[item.id] = have - 1;
 }
 
 // world loop and snapshot broadcast

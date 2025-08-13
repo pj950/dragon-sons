@@ -27,6 +27,7 @@ export interface Balance {
   minHit: number;
   maxHit: number;
   attackCooldownMs: number;
+  slotCount?: number;
 }
 
 export interface FruitOther {
@@ -47,11 +48,12 @@ export interface Fruit {
 export interface Item {
   id: string;
   name: string;
-  type: "invulnerable" | "speed" | string;
+  type: "invulnerable" | "speed" | "heal" | string;
   duration?: number;
   cooldown?: number;
   multiplier?: number;
   trigger?: "onPickup" | "onUse";
+  healAmount?: number;
 }
 
 export interface CharacterDef {
@@ -119,6 +121,8 @@ export interface Player extends Actor, Position, Velocity {
     critDmg?: number;
     defFlat?: number;
   };
+  // item slots
+  slots: (string | null)[];
 }
 
 export interface Skill {

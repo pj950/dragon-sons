@@ -103,11 +103,12 @@ export class World {
   }
 
   private updatePlayers(_dtSec: number, nowMs: number) {
-    const baseSpeed = this.balance.baseMove;
     for (const p of this.state.players.values()) {
+      const baseSpeed = this.balance.baseMove + (p.agi - 100) * this.balance.agiMoveCoef;
       const mult = (p.speedUntil && nowMs < p.speedUntil ? (p.speedMultiplier ?? 2) : 1);
-      p.x += p.vx * baseSpeed * mult / this.balance.tickRate;
-      p.y += p.vy * baseSpeed * mult / this.balance.tickRate;
+      const speed = Math.max(0, baseSpeed) * mult;
+      p.x += p.vx * speed / this.balance.tickRate;
+      p.y += p.vy * speed / this.balance.tickRate;
       // clamp to map bounds
       p.x = Math.max(0, Math.min(this.cfg.width, p.x));
       p.y = Math.max(0, Math.min(this.cfg.height, p.y));
