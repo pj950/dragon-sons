@@ -5,6 +5,9 @@ import { DEFAULT_ELEMENT_MATRIX } from "./game/elements";
 import type { Balance, Config, Player, Element, CharacterDef } from "./game/types";
 import { computeDamage } from "./game/combat";
 import { World } from "./game/world";
+import { initStore, loadLeaderboard, loadStats, saveLeaderboard, saveStats } from "./persist/store";
+import fs from "fs";
+import path from "path";
 
 // Room support (single default room + spectators)
 interface Room {
@@ -56,7 +59,8 @@ function pickCharacter(): CharacterDef {
   return list[Math.floor(Math.random() * list.length)];
 }
 
-wss.on("connection", (ws: WebSocket) => {
+wss.on("connection", async (ws: WebSocket) => {
+  await initStore();
   const clientId = generateId();
   const token = generateId();
   const room = getOrCreateRoom("default");
@@ -115,6 +119,13 @@ function handleMessage(room: Room, state: ClientState, msg: any) {
   const now = Date.now();
   const cfg = getConfig();
   const balance = getBalance();
+  // optional signature check
+  const secret = process.env.MSG_SECRET;
+  if (secret && msg?.sig) {
+    const { sig, ...payload } = msg;
+    const expect = simpleSig(JSON.stringify(payload), secret);
+    if (sig !== expect) return;
+  }
   if (msg?.t === "ping") {
     state.lastPing = now;
     state.ws.send(JSON.stringify({ t: "pong" }));
@@ -240,7 +251,9 @@ function handleMessage(room: Room, state: ClientState, msg: any) {
         { id: "basic", power: 1 }
       );
       if (!targetPlayer.player.invulnUntil || now >= targetPlayer.player.invulnUntil) {
+        const before = targetPlayer.player.hp;
         targetPlayer.player.hp = Math.max(0, targetPlayer.player.hp - damage);
+        if (before > 0 && targetPlayer.player.hp <= 0) addKill(room, state.id);
       }
       targetPlayer.ws.send(JSON.stringify({ t: "hit", from: state.id, damage, hp: targetPlayer.player.hp }));
       return;
@@ -294,20 +307,43 @@ function broadcast(room: Room, payload: any) {
   }
 }
 
+function addKill(room: Room, killerId: string) {
+  const e = room.leaderboard.find(x => x.id === killerId);
+  if (e) e.kills += 1;
+}
+
 function startRoomLoops(room: Room) {
-  setInterval(() => {
+  setInterval(async () => {
     const now = Date.now();
     const balance = getBalance();
     const cfg = getConfig();
 
-    // match state transitions
+    // min players auto start/reset
+    const minPlayers = Number(process.env.MIN_PLAYERS || 2);
+    const activePlayers = Array.from(room.clients.values()).filter(c => !!c.player).length;
+    if (room.state === "lobby" && activePlayers >= minPlayers) {
+      room.state = "countdown";
+      room.countdownEndAt = now + 5000;
+      broadcast(room, { t: "countdown", endAt: room.countdownEndAt });
+      logEvent(room.id, { type: "countdown", at: now, players: activePlayers });
+    }
+    if (room.state === "countdown" && activePlayers < minPlayers) {
+      room.state = "lobby";
+      room.countdownEndAt = undefined;
+      broadcast(room, { t: "countdown_cancel" });
+      logEvent(room.id, { type: "countdown_cancel", at: now, players: activePlayers });
+    }
+
     if (room.state === "countdown" && room.countdownEndAt && now >= room.countdownEndAt) {
       room.state = "playing";
-      room.endAt = now + 10 * 60_000; // 10 minutes
+      room.endAt = now + 10 * 60_000;
       broadcast(room, { t: "start" });
+      logEvent(room.id, { type: "start", at: now });
     }
     if (room.state === "playing" && room.endAt && now >= room.endAt) {
       room.state = "ended";
+      await persistMatch(room);
+      logEvent(room.id, { type: "end", at: now });
     }
 
     room.world.update(1 / balance.tickRate, now);
@@ -336,9 +372,40 @@ function startRoomLoops(room: Room) {
         try { s.ws.terminate(); } catch {}
         room.clients.delete(s.id);
         if (s.player) room.world.removePlayer(s.id);
+        logEvent(room.id, { type: "disconnect", id: s.id, at: now });
       }
     }
   }, 5000);
+}
+
+async function persistMatch(room: Room) {
+  const stats = await loadStats();
+  // determine winner: alive highest kills else any alive
+  const alive = room.leaderboard.filter(e => e.alive);
+  let winner: string | undefined;
+  if (alive.length > 0) {
+    alive.sort((a, b) => b.kills - a.kills);
+    winner = alive[0].id;
+  } else if (room.leaderboard.length > 0) {
+    room.leaderboard.sort((a, b) => b.kills - a.kills);
+    winner = room.leaderboard[0].id;
+  }
+  for (const e of room.leaderboard) {
+    const s = stats[e.id] || { id: e.id, matches: 0, wins: 0, kills: 0 };
+    s.matches += 1;
+    s.kills += e.kills;
+    if (winner && e.id === winner) s.wins += 1;
+    stats[e.id] = s;
+  }
+  await saveStats(stats);
+  const leaders = await loadLeaderboard();
+  for (const s of Object.values(stats)) {
+    const idx = leaders.findIndex(l => l.id === s.id);
+    const entry = { id: s.id, wins: s.wins, kills: s.kills };
+    if (idx >= 0) leaders[idx] = entry; else leaders.push(entry);
+  }
+  leaders.sort((a, b) => (b.wins - a.wins) || (b.kills - a.kills));
+  await saveLeaderboard(leaders);
 }
 
 server.listen(Number(process.env.PORT ?? 8787), () => {
@@ -351,4 +418,24 @@ function pickRandom<T>(arr: readonly T[]): T {
 
 function generateId(): string {
   return Math.random().toString(36).slice(2, 10);
+}
+
+function logEvent(roomId: string, evt: any) {
+  try {
+    const line = JSON.stringify({ room: roomId, ...evt }) + "\n";
+    fs.appendFileSync(pathJoinData("events.log"), line);
+  } catch {}
+}
+
+function pathJoinData(name: string) {
+  const dir = process.env.DATA_DIR || path.join(process.cwd(), "data");
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  return path.join(dir, name);
+}
+
+function simpleSig(body: string, secret: string): string {
+  let h = 0;
+  for (let i = 0; i < body.length; i++) h = (h * 131 + body.charCodeAt(i)) >>> 0;
+  for (let i = 0; i < secret.length; i++) h = (h * 131 + secret.charCodeAt(i)) >>> 0;
+  return h.toString(16);
 }

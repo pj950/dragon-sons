@@ -7,9 +7,9 @@
 
 - 网络与协议
   - [x] WebSocket 连接/断开
-  - [x] 消息：hello / ping/pong / move / pickup / attack / hit / snapshot / useItem / assignSlot / useSlot / rooms / createRoom / joinRoom / spectate / cast
+  - [x] 消息：hello / ping/pong / move / pickup / attack / hit / snapshot / useItem / assignSlot / useSlot / rooms / createRoom / joinRoom / spectate / cast / start / rejoin
   - [x] 输入节流与速率限制（move 约30/s，攻击基于冷却）
-  - [ ] 断线重连/重入
+  - [ ] 断线重连/重入（基础token已接，状态恢复待完善）
 
 - 世界与地图
   - [x] 圆形安全圈，按配置缩圈
@@ -50,20 +50,30 @@
   - [x] 玩家对怪物的攻击与技能伤害
   - [x] 击杀掉落水果与道具
 
-- 房间与观战
+- 房间与观战/匹配
   - [x] 房间创建/加入，容量限制
   - [x] 房间列表
   - [x] 观战模式
-  - [ ] 匹配逻辑（开局、结算）
+  - [x] 倒计时开局、对局时长、结束状态
+  - [x] 匹配：最小人数自动开局/倒计时重置
+  - [ ] 结算细节（多条件胜负、观战榜、MVP）
+
+- 持久化与榜单
+  - [x] 运行时配置热更新（支持 AB 覆盖）
+  - [x] 对局结算持久化：玩家累计战绩（场次/胜场/击杀）
+  - [x] 全局排行榜（按胜场/击杀排序）
+  - [x] 遥测事件日志（events.log）
 
 - 同步与反作弊
   - [x] 服务器权威+快照广播
-  - [ ] 客户端预测与插值（需客户端）
-  - [ ] 速度上限、签名校验、重入校验
+  - [x] 输入速度上限裁剪
+  - [x] 重入令牌（简化）
+  - [x] 可选消息签名校验（MSG_SECRET）
+  - [ ] 轨迹审计与重入状态恢复（位置/状态快照）
 
 - 数据与配置
   - [x] 数据驱动：元素矩阵/水果/道具/技能/平衡参数
-  - [ ] 配置热更新/版本化
+  - [ ] 配置版本化/灰度（AB 配置）
   - [ ] 角色表全量与 DLC 角色接入
 
 - 工具链与部署
@@ -76,10 +86,6 @@
   - [x] server README
   - [ ] 最小可玩客户端 Demo（网页/命令行）
 
-优先排期（按你的要求）
-- [x] 角色差异化初始面板（龙生九子）
-- [x] 元素水果的完整二级属性加成与上限、同元素递减
-- [x] 区域元素判定与同区增益/被克减益
-- [x] 更多道具与冷却、状态同步与去抖（已接冷却与onUse、bag/slot）
-- [x] 房间匹配/观战（基础房间与观战已接，匹配与结算待做）、部署脚本
-- [ ] 持久化（战绩/遥测/AB 配置）
+分支与PR流程
+- 开发分支：feature/match-persistence-anticheat
+- 每次开发完成后：提交到该分支并创建 Pull Request 合入 main
