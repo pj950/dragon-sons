@@ -23,6 +23,7 @@ interface Room {
 }
 
 const rooms = new Map<string, Room>();
+const rejoinStore = new Map<string, { savedAt: number; data: any }>();
 function getOrCreateRoom(id = "default"): Room {
   let r = rooms.get(id);
   if (!r) {
@@ -108,10 +109,60 @@ wss.on("connection", async (ws: WebSocket) => {
   });
 
   ws.on("close", () => {
+    // save rejoin snapshot (TTL)
+    if (state.player) {
+      rejoinStore.set(state.token!, {
+        savedAt: Date.now(),
+        data: serializePlayer(state.player),
+      });
+    }
     room.clients.delete(clientId);
     if (state.player) room.world.removePlayer(clientId);
   });
 });
+
+function serializePlayer(p: Player) {
+  return {
+    element: p.element,
+    baseAtk: p.baseAtk,
+    fruitAtkFlat: p.fruitAtkFlat,
+    def: p.def,
+    crit: p.crit,
+    critDmg: p.critDmg,
+    agi: p.agi,
+    dodge: p.dodge,
+    x: p.x, y: p.y,
+    hp: p.hp, maxHp: p.maxHp,
+    speedMultiplier: p.speedMultiplier ?? 1,
+    bag: p.bag,
+    cooldowns: p.cooldowns,
+    slots: p.slots,
+    invulnUntil: p.invulnUntil,
+    speedUntil: p.speedUntil,
+    lastAttackAt: p.lastAttackAt,
+  };
+}
+
+function applySnapshotToPlayer(p: Player, snap: any) {
+  p.element = snap.element ?? p.element;
+  p.baseAtk = snap.baseAtk ?? p.baseAtk;
+  p.fruitAtkFlat = snap.fruitAtkFlat ?? p.fruitAtkFlat;
+  p.def = snap.def ?? p.def;
+  p.crit = snap.crit ?? p.crit;
+  p.critDmg = snap.critDmg ?? p.critDmg;
+  p.agi = snap.agi ?? p.agi;
+  p.dodge = snap.dodge ?? p.dodge;
+  p.x = snap.x ?? p.x; p.y = snap.y ?? p.y;
+  p.hp = Math.max(0, Math.min(snap.hp ?? p.hp, snap.maxHp ?? p.maxHp));
+  p.maxHp = snap.maxHp ?? p.maxHp;
+  p.speedMultiplier = snap.speedMultiplier ?? p.speedMultiplier;
+  p.bag = { ...(snap.bag ?? {}) };
+  p.cooldowns = { ...(snap.cooldowns ?? {}) };
+  p.slots = Array.isArray(snap.slots) ? snap.slots.slice() : p.slots;
+  p.invulnUntil = snap.invulnUntil ?? p.invulnUntil;
+  p.speedUntil = snap.speedUntil ?? p.speedUntil;
+  p.lastAttackAt = snap.lastAttackAt ?? p.lastAttackAt;
+}
 
 function ensureLeaderboard(room: Room, id: string) {
   if (!room.leaderboard.find(e => e.id === id)) room.leaderboard.push({ id, kills: 0, alive: true });
@@ -133,37 +184,45 @@ function handleMessage(room: Room, state: ClientState, msg: any) {
     state.ws.send(JSON.stringify({ t: "pong" }));
     return;
   }
+  if (msg?.t === "leaderboard") {
+    // global leaderboard with pagination
+    (async () => {
+      const sortBy = (msg.by === "kills" ? "kills" : "wins");
+      const page = Math.max(0, Number(msg.page ?? 0));
+      const size = Math.min(100, Math.max(1, Number(msg.size ?? 20)));
+      const leaders = await loadLeaderboard();
+      leaders.sort((a, b) => (sortBy === "wins" ? (b.wins - a.wins) || (b.kills - a.kills) : (b.kills - a.kills) || (b.wins - a.wins)));
+      const start = page * size;
+      state.ws.send(JSON.stringify({ t: "leaderboard", by: sortBy, page, size, total: leaders.length, items: leaders.slice(start, start + size) }));
+    })();
+    return;
+  }
+  if (msg?.t === "roomBoard") {
+    const by = (msg.by === "damage" ? "damage" : msg.by === "kills" ? "kills" : "alive");
+    const page = Math.max(0, Number(msg.page ?? 0));
+    const size = Math.min(100, Math.max(1, Number(msg.size ?? 20)));
+    const rows: Array<{ id: string; kills: number; alive: boolean; damage: number }> = [];
+    for (const e of room.leaderboard) {
+      const cs = room.clients.get(e.id);
+      rows.push({ id: e.id, kills: e.kills, alive: e.alive, damage: cs?.damageDealt ?? 0 });
+    }
+    rows.sort((a, b) => by === "kills" ? (b.kills - a.kills) : by === "damage" ? (b.damage - a.damage) : ((a.alive === b.alive) ? 0 : a.alive ? -1 : 1));
+    const start = page * size;
+    state.ws.send(JSON.stringify({ t: "roomBoard", by, page, size, total: rows.length, items: rows.slice(start, start + size) }));
+    return;
+  }
   if (msg?.t === "rejoin" && typeof msg.token === "string") {
-    if (state.token === msg.token && !state.player) {
-      const baseChar = pickCharacter();
-      const element: Element = (baseChar.element === "random" ? pickRandom(cfg.elements) : baseChar.element) as Element;
-      const last = state.trail?.[state.trail.length - 1];
-      const player: Player = {
-        id: state.id,
-        element,
-        baseAtk: baseChar.atk,
-        fruitAtkFlat: 0,
-        def: baseChar.def,
-        crit: baseChar.crit,
-        critDmg: baseChar.critDmg,
-        agi: baseChar.agi,
-        dodge: baseChar.dodge,
-        sameFruitStacks: {},
-        x: last?.x ?? Math.random() * 100,
-        y: last?.y ?? Math.random() * 100,
-        vx: 0,
-        vy: 0,
-        hp: 100,
-        maxHp: 100,
-        speedMultiplier: 1,
-        bag: {},
-        cooldowns: {},
-        slots: new Array(balance.slotCount ?? 3).fill(null),
-      };
-      state.player = player;
-      rooms.get(state.roomId)!.world.addPlayer(player);
+    // full restore from snapshot (TTL default 2 minutes)
+    const ttl = Number(process.env.REJOIN_TTL_MS || 120000);
+    const entry = rejoinStore.get(msg.token);
+    if (entry && now - entry.savedAt <= ttl && state.player) {
+      applySnapshotToPlayer(state.player, entry.data);
+      state.player.zoneElement = rooms.get(state.roomId)!.world.computeZoneElement(state.player);
+      rejoinStore.delete(msg.token);
       ensureLeaderboard(room, state.id);
-      return;
+      state.ws.send(JSON.stringify({ t: "rejoin_ok" }));
+    } else {
+      state.ws.send(JSON.stringify({ t: "rejoin_fail" }));
     }
     return;
   }
