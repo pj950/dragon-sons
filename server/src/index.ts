@@ -78,6 +78,8 @@ wss.on("connection", async (ws: WebSocket) => {
 
   const baseChar = pickCharacter();
   const element: Element = (baseChar.element === "random" ? pickRandom(getConfig().elements) : baseChar.element) as Element;
+  const allSkills = getConfig().skills.map(s => s.id);
+  const skillPool = shuffle(allSkills).slice(0, Math.min(4, allSkills.length));
   const player: Player = {
     id: clientId,
     element,
@@ -99,6 +101,7 @@ wss.on("connection", async (ws: WebSocket) => {
     bag: {},
     cooldowns: {},
     slots: new Array(getBalance().slotCount ?? 3).fill(null),
+    skills: skillPool,
   };
   player.zoneElement = room.world.computeZoneElement(player);
 
@@ -273,6 +276,7 @@ function handleMessage(room: Room, state: ClientState, msg: any) {
   if (!state.player) return;
 
   if (msg?.t === "move") {
+    if (state.player.stunnedUntil && now < state.player.stunnedUntil) return;
     if ((state as any)._lastMoveAt && now - (state as any)._lastMoveAt < 33) return;
     (state as any)._lastMoveAt = now;
     const { vx = 0, vy = 0 } = msg;
@@ -311,6 +315,7 @@ function handleMessage(room: Room, state: ClientState, msg: any) {
     return handleUseItem(state, { itemId: msg.itemId }, now);
   }
   if (msg?.t === "attack" && typeof msg.target === "string") {
+    if (state.player.stunnedUntil && now < state.player.stunnedUntil) return;
     const aspdMul = Math.min(balance.aspdCap, 1 + (state.player.agi - 100) * balance.agiAspdCoef);
     const cdMs = Math.max(100, Math.floor(balance.attackCooldownMs / aspdMul));
     if (state.player.lastAttackAt && now - state.player.lastAttackAt < cdMs) return;
@@ -343,6 +348,8 @@ function handleMessage(room: Room, state: ClientState, msg: any) {
     return;
   }
   if (msg?.t === "cast" && typeof msg.skillId === "string" && typeof msg.target === "string") {
+    if (state.player.stunnedUntil && now < state.player.stunnedUntil) return;
+    if (!state.player.skills.includes(msg.skillId)) return;
     const skill = cfg.skills.find(s => s.id === msg.skillId);
     if (!skill) return;
     const next = state.player.cooldowns[skill.id] ?? 0;
@@ -463,6 +470,13 @@ function startRoomLoops(room: Room) {
             // temporary defense buff as a placeholder wall
             p.def += 30;
             setTimeout(() => { p.def = Math.max(0, p.def - 30); }, 4000);
+          } else if (skill.id === "earthStomp") {
+            const r = skill.radius ?? 3;
+            for (const oth of room.clients.values()) {
+              if (!oth.player || oth.id === p.id) continue;
+              const d = Math.hypot(oth.player.x - p.x, oth.player.y - p.y);
+              if (d <= r) oth.player.stunnedUntil = Date.now() + 1200;
+            }
           } else if (targetPlayer && targetPlayer.player) {
             applySkillDamage(room, p, targetPlayer.player, skill);
           }
@@ -602,3 +616,5 @@ function applySkillDamage(room: Room, atk: Player, def: Player, skill: { id: str
     if (before > 0 && def.hp <= 0) addKill(room, atk.id);
   }
 }
+
+function shuffle<T>(arr: T[]): T[] { const a = arr.slice(); for (let i= a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]];} return a; }

@@ -151,6 +151,8 @@ export interface Player extends Actor, Position, Velocity {
   };
   slots: (string | null)[];
   casting?: { skillId: string; targetId?: string; endAt: number };
+  skills: string[];
+  stunnedUntil?: number;
 }
 
 export interface Defender {
