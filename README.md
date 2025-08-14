@@ -157,3 +157,17 @@ function applyFruit(player: Player, fruit: Fruit, bal: Balance) {
 docker build -t dragon-sons-server .
 docker run --rm -p 8787:8787 dragon-sons-server
 ```
+
+### 技能系统（池规模与稀有度）
+- 当前技能池：50+（主动/被动混合），出生随机最多4个
+- 元素归属：每个技能标注元素（金木水火土），在对应元素区块释放时获得区加成（默认+15%，`skillZoneBonusPct` 可调）
+- 被动技能：开局立即生效（如：攻防加成、暴击/闪避、吸血、反伤、护盾、冷却缩减、移速等）
+- 抽取权重：
+  - 按角色 `skillWeights` 与元素 `elementSkillWeights` 加权抽取，更贴合九子风格
+  - 权重叠加后在全池进行“无放回”采样，最多4个
+- 稀有度建议（可在权重上体现）：
+  - 常驻（权重3-4）：角色标志性与核心循环技能
+  - 次级（权重2）：泛用增强
+  - 稀有（权重1）：强力但情境型
+
+> 完整技能清单与权重示例请参见 `server/src/config/balance.json` 中 `skills/skillWeights/elementSkillWeights`。
