@@ -52,6 +52,8 @@ interface ClientState {
   lastPing: number;
   roomId: string;
   token?: string;
+  damageDealt?: number;
+  trail?: Array<{ t: number; x: number; y: number }>;
 }
 
 function pickCharacter(): CharacterDef {
@@ -133,9 +135,9 @@ function handleMessage(room: Room, state: ClientState, msg: any) {
   }
   if (msg?.t === "rejoin" && typeof msg.token === "string") {
     if (state.token === msg.token && !state.player) {
-      // basic rejoin to create a new player
       const baseChar = pickCharacter();
       const element: Element = (baseChar.element === "random" ? pickRandom(cfg.elements) : baseChar.element) as Element;
+      const last = state.trail?.[state.trail.length - 1];
       const player: Player = {
         id: state.id,
         element,
@@ -147,8 +149,8 @@ function handleMessage(room: Room, state: ClientState, msg: any) {
         agi: baseChar.agi,
         dodge: baseChar.dodge,
         sameFruitStacks: {},
-        x: Math.random() * 100,
-        y: Math.random() * 100,
+        x: last?.x ?? Math.random() * 100,
+        y: last?.y ?? Math.random() * 100,
         vx: 0,
         vy: 0,
         hp: 100,
@@ -213,6 +215,10 @@ function handleMessage(room: Room, state: ClientState, msg: any) {
     const scale = mag > cap ? cap / mag : 1;
     state.player.vx = Math.max(-1, Math.min(1, Number(vx) * scale || 0));
     state.player.vy = Math.max(-1, Math.min(1, Number(vy) * scale || 0));
+    // audit trail
+    if (!state.trail) state.trail = [];
+    state.trail.push({ t: now, x: state.player.x, y: state.player.y });
+    if (state.trail.length > 50) state.trail.shift();
     return;
   }
   if (msg?.t === "pickup") {
@@ -253,6 +259,8 @@ function handleMessage(room: Room, state: ClientState, msg: any) {
       if (!targetPlayer.player.invulnUntil || now >= targetPlayer.player.invulnUntil) {
         const before = targetPlayer.player.hp;
         targetPlayer.player.hp = Math.max(0, targetPlayer.player.hp - damage);
+        const dealt = Math.max(0, before - targetPlayer.player.hp);
+        state.damageDealt = (state.damageDealt ?? 0) + dealt;
         if (before > 0 && targetPlayer.player.hp <= 0) addKill(room, state.id);
       }
       targetPlayer.ws.send(JSON.stringify({ t: "hit", from: state.id, damage, hp: targetPlayer.player.hp }));
@@ -382,7 +390,6 @@ function startRoomLoops(room: Room) {
 
 async function persistMatch(room: Room) {
   const stats = await loadStats();
-  // determine winner: alive highest kills else any alive
   const alive = room.leaderboard.filter(e => e.alive);
   let winner: string | undefined;
   if (alive.length > 0) {
@@ -392,6 +399,14 @@ async function persistMatch(room: Room) {
     room.leaderboard.sort((a, b) => b.kills - a.kills);
     winner = room.leaderboard[0].id;
   }
+  // MVP by damageDealt
+  const byDamage: Array<{ id: string; damage: number }> = [];
+  for (const c of room.clients.values()) {
+    if (c.damageDealt) byDamage.push({ id: c.id, damage: c.damageDealt });
+  }
+  byDamage.sort((a, b) => b.damage - a.damage);
+  const mvp = byDamage[0]?.id;
+
   for (const e of room.leaderboard) {
     const s = stats[e.id] || { id: e.id, matches: 0, wins: 0, kills: 0 };
     s.matches += 1;
@@ -408,6 +423,9 @@ async function persistMatch(room: Room) {
   }
   leaders.sort((a, b) => (b.wins - a.wins) || (b.kills - a.kills));
   await saveLeaderboard(leaders);
+
+  // broadcast final board to spectators
+  broadcast(room, { t: "settlement", winner, mvp, leaders: leaders.slice(0, 20) });
 }
 
 server.listen(Number(process.env.PORT ?? 8787), () => {
