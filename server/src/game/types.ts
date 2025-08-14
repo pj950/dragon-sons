@@ -80,6 +80,9 @@ export interface SkillDef {
   power: number;
   cooldownMs: number;
   castMs: number;
+  radius?: number;
+  chainCount?: number;
+  range?: number;
 }
 
 export interface CharacterDef {

@@ -27,7 +27,10 @@
     { "id": "blink", "name": "瞬身符", "type": "blink", "cooldown": 25, "trigger": "onUse" }
   ],
   "skills": [
-    { "id": "slash", "name": "重斩", "power": 1.6, "cooldownMs": 4000, "castMs": 500 }
+    { "id": "slash", "name": "重斩", "power": 1.6, "cooldownMs": 4000, "castMs": 500 },
+    { "id": "arcSlash", "name": "弧形剑气", "power": 1.2, "cooldownMs": 3500, "castMs": 300, "radius": 3.5 },
+    { "id": "thunderChain", "name": "雷链", "power": 0.9, "cooldownMs": 6000, "castMs": 200, "chainCount": 3, "range": 8 },
+    { "id": "stoneWall", "name": "石壁", "power": 0, "cooldownMs": 8000, "castMs": 200, "radius": 2.5 }
   ],
   "balance": {
     "tickRate": 20,

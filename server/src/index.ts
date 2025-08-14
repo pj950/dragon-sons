@@ -425,6 +425,52 @@ function startRoomLoops(room: Room) {
 
     room.world.update(1 / balance.tickRate, now);
 
+    // resolve casts with new skills
+    for (const cs of room.clients.values()) {
+      const p = cs.player;
+      if (!p || !p.casting) continue;
+      if (now >= p.casting.endAt) {
+        const skill = cfg.skills.find(s => s.id === p.casting!.skillId);
+        const targetPlayer = room.clients.get(p.casting!.targetId || "");
+        if (skill) {
+          if (skill.id === "arcSlash") {
+            const r = skill.radius ?? 3;
+            for (const oth of room.clients.values()) {
+              if (!oth.player || oth.id === p.id) continue;
+              const d = Math.hypot(oth.player.x - p.x, oth.player.y - p.y);
+              if (d <= r) applySkillDamage(room, p, oth.player, skill);
+            }
+          } else if (skill.id === "thunderChain") {
+            const hops = skill.chainCount ?? 3;
+            const r = skill.range ?? 8;
+            let curId = p.casting!.targetId || "";
+            const hitSet = new Set<string>();
+            for (let i = 0; i < hops; i++) {
+              const tp = room.clients.get(curId)?.player;
+              if (!tp || hitSet.has(curId)) break;
+              hitSet.add(curId);
+              applySkillDamage(room, p, tp, skill);
+              // find nearest next
+              let nextId = ""; let best = Infinity;
+              for (const [id2, c2] of room.clients.entries()) {
+                if (!c2.player || id2 === curId || hitSet.has(id2)) continue;
+                const d2 = Math.hypot(c2.player.x - tp.x, c2.player.y - tp.y);
+                if (d2 < best && d2 <= r) { best = d2; nextId = id2; }
+              }
+              if (!nextId) break; curId = nextId;
+            }
+          } else if (skill.id === "stoneWall") {
+            // temporary defense buff as a placeholder wall
+            p.def += 30;
+            setTimeout(() => { p.def = Math.max(0, p.def - 30); }, 4000);
+          } else if (targetPlayer && targetPlayer.player) {
+            applySkillDamage(room, p, targetPlayer.player, skill);
+          }
+        }
+        p.casting = undefined;
+      }
+    }
+
     // leaderboard update
     room.leaderboard.forEach(e => {
       const cs = room.clients.get(e.id);
@@ -542,4 +588,17 @@ function loadRejoinSnapshot(token: string): { savedAt: number; data: any } | nul
     const txt = fs.readFileSync(path.join(dir, `rejoin-${token}.json`), "utf8");
     return JSON.parse(txt);
   } catch { return null; }
+}
+
+function applySkillDamage(room: Room, atk: Player, def: Player, skill: { id: string; power: number }) {
+  const dmg = computeDamage({ elementMatrix: DEFAULT_ELEMENT_MATRIX, balance: getBalance() }, atk, def, { id: skill.id, power: skill.power });
+  const now = Date.now();
+  if (!def.invulnUntil || now >= def.invulnUntil) {
+    const before = def.hp;
+    def.hp = Math.max(0, def.hp - dmg);
+    const dealt = Math.max(0, before - def.hp);
+    const cs = room.clients.get(atk.id);
+    if (cs) cs.damageDealt = (cs.damageDealt ?? 0) + dealt;
+    if (before > 0 && def.hp <= 0) addKill(room, atk.id);
+  }
 }
