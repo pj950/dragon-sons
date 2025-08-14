@@ -8,6 +8,7 @@ import { World } from "./game/world";
 import { initStore, loadLeaderboard, loadStats, saveLeaderboard, saveStats } from "./persist/store";
 import fs from "fs";
 import path from "path";
+import crypto from "crypto";
 
 // Room support (single default room + spectators)
 interface Room {
@@ -42,8 +43,15 @@ function getOrCreateRoom(id = "default"): Room {
   return r;
 }
 
-const server = http.createServer();
-const wss = new WebSocketServer({ server });
+const httpServer = http.createServer((req, res) => {
+  if (req.url === "/health") {
+    res.writeHead(200, { "content-type": "application/json" });
+    res.end(JSON.stringify({ ok: true }));
+    return;
+  }
+  res.writeHead(404); res.end();
+});
+const wss = new WebSocketServer({ server: httpServer });
 watchConfig();
 
 interface ClientState {
@@ -109,12 +117,10 @@ wss.on("connection", async (ws: WebSocket) => {
   });
 
   ws.on("close", () => {
-    // save rejoin snapshot (TTL)
     if (state.player) {
-      rejoinStore.set(state.token!, {
-        savedAt: Date.now(),
-        data: serializePlayer(state.player),
-      });
+      const snap = serializePlayer(state.player);
+      rejoinStore.set(state.token!, { savedAt: Date.now(), data: snap });
+      if (process.env.PERSIST_REJOIN === "1") saveRejoinSnapshot(state.token!, snap);
     }
     room.clients.delete(clientId);
     if (state.player) room.world.removePlayer(clientId);
@@ -201,8 +207,10 @@ function handleMessage(room: Room, state: ClientState, msg: any) {
     const by = (msg.by === "damage" ? "damage" : msg.by === "kills" ? "kills" : "alive");
     const page = Math.max(0, Number(msg.page ?? 0));
     const size = Math.min(100, Math.max(1, Number(msg.size ?? 20)));
+    const fId = (typeof msg.filterId === "string" ? msg.filterId : undefined);
     const rows: Array<{ id: string; kills: number; alive: boolean; damage: number }> = [];
     for (const e of room.leaderboard) {
+      if (fId && e.id.indexOf(fId) === -1) continue;
       const cs = room.clients.get(e.id);
       rows.push({ id: e.id, kills: e.kills, alive: e.alive, damage: cs?.damageDealt ?? 0 });
     }
@@ -212,14 +220,14 @@ function handleMessage(room: Room, state: ClientState, msg: any) {
     return;
   }
   if (msg?.t === "rejoin" && typeof msg.token === "string") {
-    // full restore from snapshot (TTL default 2 minutes)
     const ttl = Number(process.env.REJOIN_TTL_MS || 120000);
-    const entry = rejoinStore.get(msg.token);
+    const mem = rejoinStore.get(msg.token);
+    const disk = process.env.PERSIST_REJOIN === "1" ? loadRejoinSnapshot(msg.token) : null;
+    const entry = mem || disk;
     if (entry && now - entry.savedAt <= ttl && state.player) {
       applySnapshotToPlayer(state.player, entry.data);
       state.player.zoneElement = rooms.get(state.roomId)!.world.computeZoneElement(state.player);
-      rejoinStore.delete(msg.token);
-      ensureLeaderboard(room, state.id);
+      if (mem) rejoinStore.delete(msg.token);
       state.ws.send(JSON.stringify({ t: "rejoin_ok" }));
     } else {
       state.ws.send(JSON.stringify({ t: "rejoin_fail" }));
@@ -487,7 +495,7 @@ async function persistMatch(room: Room) {
   broadcast(room, { t: "settlement", winner, mvp, leaders: leaders.slice(0, 20) });
 }
 
-server.listen(Number(process.env.PORT ?? 8787), () => {
+httpServer.listen(Number(process.env.PORT ?? 8787), () => {
   console.log(`dragon-sons server listening on :${Number(process.env.PORT ?? 8787)}`);
 });
 
@@ -513,8 +521,25 @@ function pathJoinData(name: string) {
 }
 
 function simpleSig(body: string, secret: string): string {
+  if (process.env.HMAC === "1") {
+    return crypto.createHmac("sha256", secret).update(body).digest("hex");
+  }
   let h = 0;
   for (let i = 0; i < body.length; i++) h = (h * 131 + body.charCodeAt(i)) >>> 0;
   for (let i = 0; i < secret.length; i++) h = (h * 131 + secret.charCodeAt(i)) >>> 0;
   return h.toString(16);
+}
+
+// persist rejoin snapshots to disk
+function saveRejoinSnapshot(token: string, data: any) {
+  const dir = process.env.DATA_DIR || path.join(process.cwd(), "data");
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, `rejoin-${token}.json`), JSON.stringify({ savedAt: Date.now(), data }), "utf8");
+}
+function loadRejoinSnapshot(token: string): { savedAt: number; data: any } | null {
+  try {
+    const dir = process.env.DATA_DIR || path.join(process.cwd(), "data");
+    const txt = fs.readFileSync(path.join(dir, `rejoin-${token}.json`), "utf8");
+    return JSON.parse(txt);
+  } catch { return null; }
 }
