@@ -9,7 +9,8 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
     "start:dev": "CONFIG_PATH=dist/config/balance.json node dist/index.js",
-    "postinstall": "mkdir -p data || true"
+    "postinstall": "mkdir -p data || true",
+    "export:skills": "node scripts/export-skills.js"
   },
   "dependencies": {
     "@types/ws": "^8.18.1",
