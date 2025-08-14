@@ -50,6 +50,7 @@ export class World {
     this.applyShrink(dtSec);
     this.updatePlayers(dtSec, nowMs);
     this.updateMonsters(nowMs);
+    this.updateProjectiles(nowMs);
     this.spawnMobsIfNeeded();
   }
 
@@ -166,6 +167,31 @@ export class World {
     for (const id of toDelete) this.state.entities.delete(id);
   }
 
+  private updateProjectiles(nowMs: number) {
+    // bombs explode
+    const toDelete: string[] = [];
+    for (const [id, e] of this.state.entities) {
+      if (e.type === "bomb" && nowMs >= e.explodeAt) {
+        for (const p of this.state.players.values()) {
+          const d = Math.hypot(p.x - e.x, p.y - e.y);
+          if (d <= e.radius) p.hp = Math.max(0, p.hp - e.damage);
+        }
+        toDelete.push(id);
+      } else if (e.type === "trap") {
+        for (const p of this.state.players.values()) {
+          if (p.id === e.ownerId) continue;
+          const d = Math.hypot(p.x - e.x, p.y - e.y);
+          if (d <= e.radius) {
+            p.hp = Math.max(0, p.hp - e.damage);
+            toDelete.push(id);
+            break;
+          }
+        }
+      }
+    }
+    for (const id of toDelete) this.state.entities.delete(id);
+  }
+
   private spawnMobsIfNeeded() {
     const tSec = this.state.tick / this.balance.tickRate;
     if (tSec - this.state.lastMobSpawnAt < this.balance.mobSpawnEvery) return;
@@ -186,6 +212,28 @@ export class World {
       };
       this.state.entities.set(m.id, m);
     }
+  }
+
+  useBomb(owner: Player) {
+    const radius = this.balance.bombRadius ?? 3;
+    const damage = this.balance.bombDamage ?? 50;
+    const b = { id: uid(), type: "bomb" as const, ownerId: owner.id, x: owner.x, y: owner.y, explodeAt: Date.now() + 2000, radius, damage };
+    this.state.entities.set(b.id, b);
+  }
+
+  useTrap(owner: Player) {
+    const radius = this.balance.trapRadius ?? 2;
+    const damage = this.balance.trapDamage ?? 30;
+    const t = { id: uid(), type: "trap" as const, ownerId: owner.id, x: owner.x, y: owner.y, radius, damage };
+    this.state.entities.set(t.id, t);
+  }
+
+  useBlink(owner: Player) {
+    const dist = this.balance.blinkDistance ?? 6;
+    const nx = Math.max(0, Math.min(this.cfg.width, owner.x + owner.vx * dist));
+    const ny = Math.max(0, Math.min(this.cfg.height, owner.y + owner.vy * dist));
+    owner.x = nx;
+    owner.y = ny;
   }
 
   damageMonster(monsterId: string, amount: number) {

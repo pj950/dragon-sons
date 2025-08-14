@@ -21,9 +21,9 @@ export interface Balance {
   sameFruitDiminishRate: number;
   mobSpawnEvery: number;
   itemDropChance: number;
-  // new
-  baseHit: number; // base hit chance
-  agiHitCoef: number; // per agi diff impact on hit
+  // combat caps
+  baseHit: number;
+  agiHitCoef: number;
   minHit: number;
   maxHit: number;
   attackCooldownMs: number;
@@ -37,6 +37,15 @@ export interface Balance {
   monsterDef?: number;
   // rooms
   roomCapacity?: number;
+  // global caps
+  critMax?: number;
+  dodgeMax?: number;
+  // throwable & traps & blink
+  bombRadius?: number;
+  bombDamage?: number;
+  trapRadius?: number;
+  trapDamage?: number;
+  blinkDistance?: number;
 }
 
 export interface FruitOther {
@@ -57,7 +66,7 @@ export interface Fruit {
 export interface Item {
   id: string;
   name: string;
-  type: "invulnerable" | "speed" | "heal" | string;
+  type: "invulnerable" | "speed" | "heal" | "bomb" | "trap" | "blink" | string;
   duration?: number;
   cooldown?: number;
   multiplier?: number;
@@ -127,11 +136,9 @@ export interface Player extends Actor, Position, Velocity {
   invulnUntil?: number;
   speedUntil?: number;
   speedMultiplier?: number;
-  // inventory & cooldowns
-  bag: Record<string, number>; // itemId -> count
-  cooldowns: Record<string, number>; // itemId/skill key -> nextAvailableAt ms
+  bag: Record<string, number>;
+  cooldowns: Record<string, number>;
   lastAttackAt?: number;
-  // fruit-derived caps tracking
   fruitOtherGains?: {
     critRatePct?: number;
     agiFlat?: number;
@@ -139,9 +146,7 @@ export interface Player extends Actor, Position, Velocity {
     critDmg?: number;
     defFlat?: number;
   };
-  // item slots
   slots: (string | null)[];
-  // skill casting
   casting?: { skillId: string; targetId?: string; endAt: number };
 }
 
@@ -153,7 +158,7 @@ export interface Defender {
 
 export interface Skill {
   id: string;
-  power: number; // skill damage coefficient
+  power: number;
 }
 
 export interface GroundFruit extends Position {
@@ -165,7 +170,7 @@ export interface GroundFruit extends Position {
 export interface GroundItem extends Position {
   id: EntityId;
   type: "item";
-  itemId: string; // matches Config.items.id
+  itemId: string;
 }
 
 export interface Monster extends Position {
@@ -180,4 +185,21 @@ export interface Monster extends Position {
   mvy: number;
 }
 
-export type WorldEntity = GroundFruit | GroundItem | Monster;
+export interface BombEntity extends Position {
+  id: EntityId;
+  type: "bomb";
+  ownerId: string;
+  explodeAt: number;
+  radius: number;
+  damage: number;
+}
+
+export interface TrapEntity extends Position {
+  id: EntityId;
+  type: "trap";
+  ownerId: string;
+  radius: number;
+  damage: number;
+}
+
+export type WorldEntity = GroundFruit | GroundItem | Monster | BombEntity | TrapEntity;

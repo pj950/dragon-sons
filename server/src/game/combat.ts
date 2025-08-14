@@ -17,7 +17,9 @@ export function computeDamage(ctx: Ctx, atk: Player, def: Player, skill: Skill):
   const effectiveAtk = (atk.baseAtk + atk.fruitAtkFlat) * zoneAtkMul * skill.power;
   const elementMul = elementMultiplier(atk.element, def.element, ctx.elementMatrix);
 
-  const critMul = roll(atk.crit) ? atk.critDmg : 1;
+  const critRate = Math.min(ctx.balance.critMax ?? 1, atk.crit);
+  const defDodge = Math.min(ctx.balance.dodgeMax ?? 1, def.dodge ?? 0);
+  const critMul = roll(critRate) ? atk.critDmg : 1;
   const defMit = 1 - def.def / (def.def + ctx.balance.kDef);
 
   const damage = effectiveAtk * elementMul * critMul * defMit * zoneDefMul;
@@ -34,17 +36,17 @@ export function applyFruit(player: Player, fruit: Fruit, bal: Balance) {
     player.fruitAtkFlat += Math.max(0, Math.min(gain, capRemain));
     player.sameFruitStacks[fruit.element] = stacks + 1;
   } else if (fruit.other) {
-    grantSecondary(player, fruit.other);
+    grantSecondary(player, fruit.other, bal);
   }
 }
 
-function grantSecondary(player: Player, other: FruitOther) {
+function grantSecondary(player: Player, other: FruitOther, bal: Balance) {
   const gains = player.fruitOtherGains ?? {};
   const clamp = (value: number, max: number, current: number) => Math.max(0, Math.min(value, Math.max(0, max - current)));
 
   if (other.critRatePct) {
-    const add = clamp(other.critRatePct, other.max, gains.critRatePct ?? 0);
-    player.crit = Math.min(1, player.crit + add);
+    const add = clamp(other.critRatePct, Math.min(other.max, bal.critMax ?? other.max), gains.critRatePct ?? 0);
+    player.crit = Math.min(bal.critMax ?? 1, player.crit + add);
     gains.critRatePct = (gains.critRatePct ?? 0) + add;
   }
   if (other.critDmg) {
@@ -63,8 +65,8 @@ function grantSecondary(player: Player, other: FruitOther) {
     gains.agiFlat = (gains.agiFlat ?? 0) + add;
   }
   if (other.dodgePct) {
-    const add = clamp(other.dodgePct, other.max, gains.dodgePct ?? 0);
-    player.dodge = Math.min(1, player.dodge + add);
+    const add = clamp(other.dodgePct, Math.min(other.max, bal.dodgeMax ?? other.max), gains.dodgePct ?? 0);
+    player.dodge = Math.min(bal.dodgeMax ?? 1, player.dodge + add);
     gains.dodgePct = (gains.dodgePct ?? 0) + add;
   }
 
@@ -74,8 +76,7 @@ function grantSecondary(player: Player, other: FruitOther) {
 function rollHit(ctx: Ctx, atk: Player, def: Player): boolean {
   const base = ctx.balance.baseHit;
   const agiDiff = (atk.agi - (def.agi ?? 100));
-  const aspdMul = Math.min(ctx.balance.aspdCap, 1 + (atk.agi - 100) * ctx.balance.agiAspdCoef);
-  let hit = base + agiDiff * ctx.balance.agiHitCoef - (def.dodge ?? 0);
+  let hit = base + agiDiff * ctx.balance.agiHitCoef - Math.min(ctx.balance.dodgeMax ?? 1, def.dodge ?? 0);
   hit = Math.max(ctx.balance.minHit, Math.min(ctx.balance.maxHit, hit));
   return roll(hit);
 }

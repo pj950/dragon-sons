@@ -293,9 +293,11 @@ function handleUseItem(state: ClientState, msg: { itemId: string }, now: number)
     state.player!.speedUntil = now + (item.duration ?? 6) * 1000;
     state.player!.speedMultiplier = Math.max(state.player!.speedMultiplier ?? 1, item.multiplier ?? 2);
   }
-  if (item.type === "heal") {
-    state.player!.hp = Math.min(state.player!.maxHp, state.player!.hp + (item.healAmount ?? 30));
-  }
+  if (item.type === "heal") state.player!.hp = Math.min(state.player!.maxHp, state.player!.hp + (item.healAmount ?? 30));
+  if (item.type === "bomb") rooms.get(state.roomId)!.world.useBomb(state.player!);
+  if (item.type === "trap") rooms.get(state.roomId)!.world.useTrap(state.player!);
+  if (item.type === "blink") rooms.get(state.roomId)!.world.useBlink(state.player!);
+
   state.player!.cooldowns[item.id] = now + (item.cooldown ?? 90) * 1000;
   state.player!.bag[item.id] = have - 1;
 }

@@ -21,7 +21,10 @@
   "items": [
     { "id": "invuln", "name": "金钟罩", "duration": 5, "cooldown": 90, "type": "invulnerable", "trigger": "onUse" },
     { "id": "boots", "name": "神行鞋", "duration": 6, "cooldown": 90, "type": "speed", "multiplier": 2, "trigger": "onUse" },
-    { "id": "potion", "name": "疗愈丹", "type": "heal", "healAmount": 40, "cooldown": 30, "trigger": "onUse" }
+    { "id": "potion", "name": "疗愈丹", "type": "heal", "healAmount": 40, "cooldown": 30, "trigger": "onUse" },
+    { "id": "bomb", "name": "火雷丸", "type": "bomb", "cooldown": 15, "trigger": "onUse" },
+    { "id": "trap", "name": "地刺阵", "type": "trap", "cooldown": 20, "trigger": "onUse" },
+    { "id": "blink", "name": "瞬身符", "type": "blink", "cooldown": 25, "trigger": "onUse" }
   ],
   "skills": [
     { "id": "slash", "name": "重斩", "power": 1.6, "cooldownMs": 4000, "castMs": 500 }
@@ -57,6 +60,13 @@
     "monsterAttackCooldownMs": 1200,
     "monsterDamage": 10,
     "monsterDef": 40,
-    "roomCapacity": 16
+    "roomCapacity": 16,
+    "critMax": 0.3,
+    "dodgeMax": 0.3,
+    "bombRadius": 3.5,
+    "bombDamage": 60,
+    "trapRadius": 2.0,
+    "trapDamage": 35,
+    "blinkDistance": 6
   }
 }
