@@ -83,6 +83,22 @@ export interface SkillDef {
   radius?: number;
   chainCount?: number;
   range?: number;
+  kind?: "active" | "passive";
+  // passive modifiers (applied on spawn)
+  passive?: {
+    atkFlat?: number;
+    defFlat?: number;
+    agiFlat?: number;
+    critRatePct?: number;
+    critDmg?: number;
+    dodgePct?: number;
+    lifestealPct?: number;
+    reflectPct?: number;
+    cdReductionPct?: number;
+    moveSpeedPct?: number;
+    maxHpFlat?: number;
+    shieldFlat?: number;
+  };
 }
 
 export interface CharacterDef {
@@ -153,6 +169,19 @@ export interface Player extends Actor, Position, Velocity {
   casting?: { skillId: string; targetId?: string; endAt: number };
   skills: string[];
   stunnedUntil?: number;
+  silencedUntil?: number;
+  rootedUntil?: number;
+  slowUntil?: number;
+  slowMul?: number;
+  shieldHp?: number;
+  lifestealPct?: number;
+  reflectPct?: number;
+  cdReductionPct?: number;
+  moveSpeedBonusPct?: number;
+  bleedUntil?: number;
+  bleedDps?: number;
+  burnUntil?: number;
+  burnDps?: number;
 }
 
 export interface Defender {

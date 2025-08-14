@@ -103,6 +103,7 @@ wss.on("connection", async (ws: WebSocket) => {
     slots: new Array(getBalance().slotCount ?? 3).fill(null),
     skills: skillPool,
   };
+  applyPassives(player);
   player.zoneElement = room.world.computeZoneElement(player);
 
   const state: ClientState = { id: clientId, ws, player, lastPing: Date.now(), roomId: room.id, token };
@@ -605,15 +606,46 @@ function loadRejoinSnapshot(token: string): { savedAt: number; data: any } | nul
 }
 
 function applySkillDamage(room: Room, atk: Player, def: Player, skill: { id: string; power: number }) {
-  const dmg = computeDamage({ elementMatrix: DEFAULT_ELEMENT_MATRIX, balance: getBalance() }, atk, def, { id: skill.id, power: skill.power });
+  let dmg = computeDamage({ elementMatrix: DEFAULT_ELEMENT_MATRIX, balance: getBalance() }, atk, def, { id: skill.id, power: skill.power });
   const now = Date.now();
   if (!def.invulnUntil || now >= def.invulnUntil) {
+    // shield absorb
+    if (def.shieldHp && def.shieldHp > 0) {
+      const used = Math.min(def.shieldHp, dmg);
+      def.shieldHp -= used; dmg -= used;
+    }
+    if (dmg <= 0) return;
     const before = def.hp;
     def.hp = Math.max(0, def.hp - dmg);
     const dealt = Math.max(0, before - def.hp);
     const cs = room.clients.get(atk.id);
     if (cs) cs.damageDealt = (cs.damageDealt ?? 0) + dealt;
+    // lifesteal
+    if (dealt > 0 && atk.lifestealPct) atk.hp = Math.min(atk.maxHp, atk.hp + dealt * atk.lifestealPct);
+    // reflect
+    if (dealt > 0 && def.reflectPct) atk.hp = Math.max(0, atk.hp - Math.floor(dealt * def.reflectPct));
     if (before > 0 && def.hp <= 0) addKill(room, atk.id);
+  }
+}
+
+function applyPassives(p: Player) {
+  const defs = getConfig().skills;
+  for (const id of p.skills) {
+    const s = defs.find(d => d.id === id);
+    if (!s?.passive) continue;
+    const k = s.passive;
+    if (k.atkFlat) p.baseAtk += k.atkFlat;
+    if (k.defFlat) p.def += k.defFlat;
+    if (k.agiFlat) p.agi += k.agiFlat;
+    if (k.critRatePct) p.crit = Math.min(getBalance().critMax ?? 1, p.crit + k.critRatePct);
+    if (k.critDmg) p.critDmg += k.critDmg;
+    if (k.dodgePct) p.dodge = Math.min(getBalance().dodgeMax ?? 1, p.dodge + k.dodgePct);
+    if (k.lifestealPct) p.lifestealPct = (p.lifestealPct ?? 0) + k.lifestealPct;
+    if (k.reflectPct) p.reflectPct = (p.reflectPct ?? 0) + k.reflectPct;
+    if (k.cdReductionPct) p.cdReductionPct = Math.min(0.5, (p.cdReductionPct ?? 0) + k.cdReductionPct);
+    if (k.moveSpeedPct) p.moveSpeedBonusPct = (p.moveSpeedBonusPct ?? 0) + k.moveSpeedPct;
+    if (k.maxHpFlat) { p.maxHp += k.maxHpFlat; p.hp += k.maxHpFlat; }
+    if (k.shieldFlat) p.shieldHp = (p.shieldHp ?? 0) + k.shieldFlat;
   }
 }
 
