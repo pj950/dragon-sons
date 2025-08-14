@@ -636,7 +636,9 @@ function loadRejoinSnapshot(token: string): { savedAt: number; data: any } | nul
 
 function applySkillDamage(room: Room, atk: Player, def: Player, skill: { id: string; power: number }) {
   const defSkill = getConfig().skills.find(s => s.id === skill.id);
-  const zoneBonus = (defSkill?.element && atk.zoneElement === defSkill.element) ? (1 + (getBalance().skillZoneBonusPct ?? 0)) : 1;
+  const skillElem = defSkill?.element;
+  const inZone = atk.zoneElement === (skillElem ?? atk.element);
+  const zoneBonus = inZone ? (1 + (getBalance().skillZoneBonusPct ?? 0)) : 1;
   let dmg = computeDamage({ elementMatrix: DEFAULT_ELEMENT_MATRIX, balance: getBalance() }, atk, def, { id: skill.id, power: (skill.power * zoneBonus) });
   const now = Date.now();
   if (!def.invulnUntil || now >= def.invulnUntil) {

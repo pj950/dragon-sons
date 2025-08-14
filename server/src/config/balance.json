@@ -112,7 +112,14 @@
   },
   "skillWeights": {
     "qiuniu": [ { "id": "arcSlash", "weight": 3 }, { "id": "metalClash", "weight": 3 }, { "id": "ironBody", "weight": 2 }, { "id": "berserk", "weight": 2 } ],
-    "yazi":   [ { "id": "thunderChain", "weight": 4 }, { "id": "cyclone", "weight": 2 }, { "id": "eagleEye", "weight": 2 }, { "id": "swiftFeet", "weight": 2 } ]
+    "yazi":   [ { "id": "thunderChain", "weight": 4 }, { "id": "cyclone", "weight": 2 }, { "id": "eagleEye", "weight": 2 }, { "id": "swiftFeet", "weight": 2 } ],
+    "chaofeng": [ { "id": "galeStep", "weight": 3 }, { "id": "windDash", "weight": 3 }, { "id": "eagleEye", "weight": 2 }, { "id": "keenEdge", "weight": 2 } ],
+    "pulao":   [ { "id": "quake", "weight": 3 }, { "id": "earthStomp", "weight": 3 }, { "id": "stoneSkin", "weight": 2 }, { "id": "rockShield", "weight": 2 } ],
+    "suanni":  [ { "id": "flameBurst", "weight": 4 }, { "id": "lavaZone", "weight": 3 }, { "id": "burningMark", "weight": 2 }, { "id": "phoenix", "weight": 2 } ],
+    "bixi":    [ { "id": "rockShield", "weight": 4 }, { "id": "stoneWall", "weight": 3 }, { "id": "ironBody", "weight": 2 }, { "id": "thorns", "weight": 2 } ],
+    "bixie":   [ { "id": "arcSlash", "weight": 3 }, { "id": "venomStrike", "weight": 3 }, { "id": "serpent", "weight": 2 }, { "id": "forestSnare", "weight": 2 } ],
+    "fuxi":    [ { "id": "waterJet", "weight": 3 }, { "id": "blizzard", "weight": 3 }, { "id": "torrent", "weight": 2 }, { "id": "quickCast", "weight": 2 } ],
+    "chiwen":  [ { "id": "cyclone", "weight": 3 }, { "id": "staticField", "weight": 3 }, { "id": "thunderChain", "weight": 2 }, { "id": "swiftFeet", "weight": 2 } ]
   },
   "elementSkillWeights": {
     "metal": [ { "id": "metalClash", "weight": 3 }, { "id": "ironBody", "weight": 2 } ],
