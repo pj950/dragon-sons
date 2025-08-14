@@ -46,6 +46,8 @@ export interface Balance {
   trapRadius?: number;
   trapDamage?: number;
   blinkDistance?: number;
+  // skills
+  skillZoneBonusPct?: number;
 }
 
 export interface FruitOther {
@@ -84,6 +86,7 @@ export interface SkillDef {
   chainCount?: number;
   range?: number;
   kind?: "active" | "passive";
+  element?: Element;
   // passive modifiers (applied on spawn)
   passive?: {
     atkFlat?: number;
@@ -121,6 +124,8 @@ export interface Config {
   items: Item[];
   skills: SkillDef[];
   balance: Balance;
+  skillWeights?: Record<string, Array<{ id: string; weight: number }>>;
+  elementSkillWeights?: Record<Element, Array<{ id: string; weight: number }>>;
 }
 
 export type EntityId = string;

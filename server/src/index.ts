@@ -70,6 +70,36 @@ function pickCharacter(): CharacterDef {
   return list[Math.floor(Math.random() * list.length)];
 }
 
+function pickSkillsFor(characterId: string, element: Element): string[] {
+  const cfg = getConfig();
+  const pool = new Map<string, number>();
+  // base all skills weight 1
+  for (const s of cfg.skills) pool.set(s.id, 1);
+  // character weights
+  const cw = cfg.skillWeights?.[characterId] || [];
+  for (const w of cw) pool.set(w.id, (pool.get(w.id) || 0) + w.weight);
+  // element weights
+  const ew = cfg.elementSkillWeights?.[element] || [];
+  for (const w of ew) pool.set(w.id, (pool.get(w.id) || 0) + w.weight);
+  // build array
+  const arr: Array<{ id: string; w: number }> = [];
+  for (const [id, w] of pool) arr.push({ id, w });
+  // sample up to 4 without replacement
+  const chosen: string[] = [];
+  for (let k = 0; k < 4 && arr.length > 0; k++) {
+    const total = arr.reduce((a, b) => a + b.w, 0);
+    let r = Math.random() * total;
+    let idx = 0;
+    for (; idx < arr.length; idx++) { r -= arr[idx].w; if (r <= 0) break; }
+    const pick = arr[Math.min(idx, arr.length - 1)].id;
+    chosen.push(pick);
+    // remove picked
+    const at = arr.findIndex(x => x.id === pick);
+    if (at >= 0) arr.splice(at, 1);
+  }
+  return chosen;
+}
+
 wss.on("connection", async (ws: WebSocket) => {
   await initStore();
   const clientId = generateId();
@@ -78,8 +108,7 @@ wss.on("connection", async (ws: WebSocket) => {
 
   const baseChar = pickCharacter();
   const element: Element = (baseChar.element === "random" ? pickRandom(getConfig().elements) : baseChar.element) as Element;
-  const allSkills = getConfig().skills.map(s => s.id);
-  const skillPool = shuffle(allSkills).slice(0, Math.min(4, allSkills.length));
+  const skillPool = pickSkillsFor(baseChar.id, element);
   const player: Player = {
     id: clientId,
     element,
@@ -606,7 +635,9 @@ function loadRejoinSnapshot(token: string): { savedAt: number; data: any } | nul
 }
 
 function applySkillDamage(room: Room, atk: Player, def: Player, skill: { id: string; power: number }) {
-  let dmg = computeDamage({ elementMatrix: DEFAULT_ELEMENT_MATRIX, balance: getBalance() }, atk, def, { id: skill.id, power: skill.power });
+  const defSkill = getConfig().skills.find(s => s.id === skill.id);
+  const zoneBonus = (defSkill?.element && atk.zoneElement === defSkill.element) ? (1 + (getBalance().skillZoneBonusPct ?? 0)) : 1;
+  let dmg = computeDamage({ elementMatrix: DEFAULT_ELEMENT_MATRIX, balance: getBalance() }, atk, def, { id: skill.id, power: (skill.power * zoneBonus) });
   const now = Date.now();
   if (!def.invulnUntil || now >= def.invulnUntil) {
     // shield absorb
