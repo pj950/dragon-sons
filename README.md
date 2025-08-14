@@ -175,3 +175,19 @@ docker run --rm -p 8787:8787 dragon-sons-server
 - 角色个性化：
   - 在 `characterSkillLists` 配置每位九子的推荐/禁用技能列表，推荐权重提升、禁用直接排除
   - 支持 `rarityWeights` 按稀有度（common/uncommon/rare/epic）控制抽取配比
+
+### 技能一览（示例）
+| 名称 | 元素 | 类型 | 稀有度 | 要点 |
+|---|---|---|---|---|
+| 重斩 slash | 金 metal | 主动 | common | 单体近战高倍率（1.6） |
+| 弧形剑气 arcSlash | 金 metal | 主动 | common | 半径3.5 近身AOE |
+| 雷链 thunderChain | 木 wood | 主动 | rare | 最多3段链向最近敌人，射程8 |
+| 石壁 stoneWall | 土 earth | 主动 | uncommon | 临时防护（配合护盾类被动） |
+| 地裂踏击 earthStomp | 土 earth | 主动 | uncommon | 范围眩晕约1.2s |
+| 炎爆 flameBurst | 火 fire | 主动 | uncommon | 中等范围爆发 |
+| 冰环 iceNova | 水 water | 主动 | common | 半径3.0 冰系AOE |
+| 风驰 windDash | 木 wood | 主动 | uncommon | 短距离位移（配合位移道具更强） |
+| 不死鸟 phoenix | 火 fire | 被动 | epic | 吸血（5%） |
+| 金刚身 ironBody | 金 metal | 被动 | common | 防御+20 |
+
+> 完整清单与数值请见 `server/src/config/balance.json` 的 `skills`。可通过 `rarityWeights` 与角色/元素权重来调整抽取分布。
