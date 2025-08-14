@@ -87,6 +87,7 @@ export interface SkillDef {
   range?: number;
   kind?: "active" | "passive";
   element?: Element;
+  rarity?: "common" | "uncommon" | "rare" | "epic";
   // passive modifiers (applied on spawn)
   passive?: {
     atkFlat?: number;
@@ -126,6 +127,8 @@ export interface Config {
   balance: Balance;
   skillWeights?: Record<string, Array<{ id: string; weight: number }>>;
   elementSkillWeights?: Record<Element, Array<{ id: string; weight: number }>>;
+  characterSkillLists?: Record<string, { recommend?: string[]; ban?: string[] }>;
+  rarityWeights?: { common: number; uncommon: number; rare: number; epic: number };
 }
 
 export type EntityId = string;

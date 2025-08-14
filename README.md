@@ -171,3 +171,7 @@ docker run --rm -p 8787:8787 dragon-sons-server
   - 稀有（权重1）：强力但情境型
 
 > 完整技能清单与权重示例请参见 `server/src/config/balance.json` 中 `skills/skillWeights/elementSkillWeights`。
+
+- 角色个性化：
+  - 在 `characterSkillLists` 配置每位九子的推荐/禁用技能列表，推荐权重提升、禁用直接排除
+  - 支持 `rarityWeights` 按稀有度（common/uncommon/rare/epic）控制抽取配比

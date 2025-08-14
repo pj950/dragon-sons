@@ -75,12 +75,23 @@ function pickSkillsFor(characterId: string, element: Element): string[] {
   const pool = new Map<string, number>();
   // base all skills weight 1
   for (const s of cfg.skills) pool.set(s.id, 1);
+  // character lists
+  const lists = cfg.characterSkillLists?.[characterId];
+  if (lists?.ban) for (const id of lists.ban) pool.delete(id);
+  if (lists?.recommend) for (const id of lists.recommend) pool.set(id, (pool.get(id) || 0) + 2);
+  // rarity weights
+  const rw = cfg.rarityWeights || { common: 4, uncommon: 3, rare: 2, epic: 1 };
+  for (const s of cfg.skills) {
+    if (!pool.has(s.id)) continue;
+    const r = s.rarity || "common";
+    pool.set(s.id, (pool.get(s.id) || 0) + (rw as any)[r]);
+  }
   // character weights
   const cw = cfg.skillWeights?.[characterId] || [];
-  for (const w of cw) pool.set(w.id, (pool.get(w.id) || 0) + w.weight);
+  for (const w of cw) if (pool.has(w.id)) pool.set(w.id, (pool.get(w.id) || 0) + w.weight);
   // element weights
   const ew = cfg.elementSkillWeights?.[element] || [];
-  for (const w of ew) pool.set(w.id, (pool.get(w.id) || 0) + w.weight);
+  for (const w of ew) if (pool.has(w.id)) pool.set(w.id, (pool.get(w.id) || 0) + w.weight);
   // build array
   const arr: Array<{ id: string; w: number }> = [];
   for (const [id, w] of pool) arr.push({ id, w });
@@ -93,7 +104,6 @@ function pickSkillsFor(characterId: string, element: Element): string[] {
     for (; idx < arr.length; idx++) { r -= arr[idx].w; if (r <= 0) break; }
     const pick = arr[Math.min(idx, arr.length - 1)].id;
     chosen.push(pick);
-    // remove picked
     const at = arr.findIndex(x => x.id === pick);
     if (at >= 0) arr.splice(at, 1);
   }

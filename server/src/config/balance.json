@@ -27,15 +27,15 @@
     { "id": "blink", "name": "瞬身符", "type": "blink", "cooldown": 25, "trigger": "onUse" }
   ],
   "skills": [
-    { "id": "slash", "name": "重斩", "power": 1.6, "cooldownMs": 4000, "castMs": 500, "element": "metal" },
-    { "id": "arcSlash", "name": "弧形剑气", "power": 1.2, "cooldownMs": 3500, "castMs": 300, "radius": 3.5, "element": "metal" },
-    { "id": "thunderChain", "name": "雷链", "power": 0.9, "cooldownMs": 6000, "castMs": 200, "chainCount": 3, "range": 8, "element": "wood" },
-    { "id": "stoneWall", "name": "石壁", "power": 0, "cooldownMs": 8000, "castMs": 200, "radius": 2.5, "element": "earth" },
-    { "id": "earthStomp", "name": "地裂踏击", "power": 0, "cooldownMs": 7000, "castMs": 150, "radius": 3.0, "element": "earth" },
-    { "id": "flameBurst", "name": "炎爆", "power": 1.4, "cooldownMs": 5000, "castMs": 250, "radius": 2.5, "element": "fire" },
-    { "id": "iceNova", "name": "冰环", "power": 1.1, "cooldownMs": 5200, "castMs": 250, "radius": 3.0, "element": "water" },
-    { "id": "windDash", "name": "风驰", "power": 0.8, "cooldownMs": 4000, "castMs": 0, "range": 5, "element": "wood" },
-    { "id": "waterJet", "name": "水矢", "power": 1.0, "cooldownMs": 3200, "castMs": 150, "range": 7, "element": "water" },
+    { "id": "slash", "name": "重斩", "power": 1.6, "cooldownMs": 4000, "castMs": 500, "element": "metal", "rarity": "common" },
+    { "id": "arcSlash", "name": "弧形剑气", "power": 1.2, "cooldownMs": 3500, "castMs": 300, "radius": 3.5, "element": "metal", "rarity": "common" },
+    { "id": "thunderChain", "name": "雷链", "power": 0.9, "cooldownMs": 6000, "castMs": 200, "chainCount": 3, "range": 8, "element": "wood", "rarity": "rare" },
+    { "id": "stoneWall", "name": "石壁", "power": 0, "cooldownMs": 8000, "castMs": 200, "radius": 2.5, "element": "earth", "rarity": "uncommon" },
+    { "id": "earthStomp", "name": "地裂踏击", "power": 0, "cooldownMs": 7000, "castMs": 150, "radius": 3.0, "element": "earth", "rarity": "uncommon" },
+    { "id": "flameBurst", "name": "炎爆", "power": 1.4, "cooldownMs": 5000, "castMs": 250, "radius": 2.5, "element": "fire", "rarity": "uncommon" },
+    { "id": "iceNova", "name": "冰环", "power": 1.1, "cooldownMs": 5200, "castMs": 250, "radius": 3.0, "element": "water", "rarity": "common" },
+    { "id": "windDash", "name": "风驰", "power": 0.8, "cooldownMs": 4000, "castMs": 0, "range": 5, "element": "wood", "rarity": "uncommon" },
+    { "id": "waterJet", "name": "水矢", "power": 1.0, "cooldownMs": 3200, "castMs": 150, "range": 7, "element": "water", "rarity": "common" },
     { "id": "rockShield", "name": "岩盾", "power": 0, "cooldownMs": 7000, "castMs": 200, "radius": 0, "kind": "active", "element": "earth" },
     { "id": "metalClash", "name": "金鸣", "power": 1.3, "cooldownMs": 3800, "castMs": 120, "radius": 2.0, "element": "metal" },
     { "id": "forestSnare", "name": "缚根", "power": 0.6, "cooldownMs": 4500, "castMs": 180, "radius": 2.5, "element": "wood" },
@@ -135,5 +135,17 @@
     "water": [ { "id": "waterJet", "weight": 3 }, { "id": "blizzard", "weight": 2 } ],
     "fire":  [ { "id": "flameBurst", "weight": 3 }, { "id": "burningMark", "weight": 2 } ],
     "earth": [ { "id": "quake", "weight": 3 }, { "id": "stoneSkin", "weight": 2 } ]
-  }
+  },
+  "characterSkillLists": {
+    "qiuniu": { "recommend": ["metalClash","arcSlash","ironBody"], "ban": ["lavaZone","blizzard"] },
+    "yazi":   { "recommend": ["thunderChain","cyclone","swiftFeet"], "ban": ["stoneWall"] },
+    "chaofeng": { "recommend": ["galeStep","windDash"], "ban": ["mudTrap"] },
+    "pulao": { "recommend": ["earthStomp","quake","stoneSkin"], "ban": ["windDash"] },
+    "suanni": { "recommend": ["flameBurst","lavaZone","phoenix"], "ban": ["waterJet","blizzard"] },
+    "bixi": { "recommend": ["rockShield","stoneWall","thorns"], "ban": ["galeStep"] },
+    "bixie": { "recommend": ["venomStrike","forestSnare","serpent"], "ban": ["ironRain"] },
+    "fuxi": { "recommend": ["waterJet","blizzard","torrent"], "ban": ["flameBurst"] },
+    "chiwen": { "recommend": ["cyclone","staticField","thunderChain"], "ban": ["mudTrap"] }
+  },
+  "rarityWeights": { "common": 4, "uncommon": 3, "rare": 2, "epic": 1 }
 }
