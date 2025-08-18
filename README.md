@@ -144,7 +144,28 @@ function applyFruit(player: Player, fruit: Fruit, bal: Balance) {
 - 指标：对局时长、击杀分布、同元素叠层、被克击杀率、圈外死亡率
 - 可选技术栈：客户端 Unity/Unreal/Phaser；服务端 Node.js + WebSocket/Colyseus
 
-如需，我可在本仓库直接生成服务端（TypeScript，权威服）与客户端样例场景的骨架工程，开箱即跑。
+✅ **完整实现**：本仓库包含完整的服务端（TypeScript，权威服）与Web客户端，开箱即跑！
+
+### 🎮 Web客户端 (新增)
+- **HTML5游戏客户端**：完整的浏览器游戏体验
+- **实时多人对战**：WebSocket连接，20Hz同步
+- **Canvas 2D渲染**：角色、地图、UI、特效渲染
+- **粒子特效系统**：40+技能特效实时播放
+- **Web Audio音效**：120+音效文件支持，音量控制
+- **现代化UI**：血量条、技能栏、背包、小地图、排行榜
+- **输入系统**：WASD移动，QWER技能，鼠标操作
+- **响应式设计**：支持不同屏幕尺寸
+
+**快速体验**：
+```bash
+# 启动服务器
+cd server && npm install && npm start
+
+# 启动客户端 (新终端)
+cd client && npx serve . -p 8080
+
+# 访问游戏: http://localhost:8080
+```
 
 ### 进度与路线图
 - 请见 `ROADMAP.md` 获取完整的实现清单与进度勾选，以及优先排期：

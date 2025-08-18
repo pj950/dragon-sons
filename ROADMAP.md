@@ -90,12 +90,25 @@
   - [x] HTTP /health 健康检查
   - [ ] 环境变量与监控（日志聚合/metrics）
 
+- 客户端实现 🎮
+  - [x] HTML5游戏界面和UI系统
+  - [x] WebSocket客户端连接管理
+  - [x] Canvas 2D渲染引擎（角色、地图、UI）
+  - [x] 粒子特效系统（40+技能特效）
+  - [x] Web Audio音效系统（120+音效支持）
+  - [x] 输入处理系统（键盘+鼠标）
+  - [x] 游戏状态管理和UI更新
+  - [x] 设置系统和本地存储
+  - [ ] 实际音效资源文件制作
+  - [ ] 技能和道具图标制作
+  - [ ] 移动端触屏优化
+
 - 文档与演示
   - [x] 根 README 设计文档
   - [x] server README
+  - [x] 客户端README和测试页面
   - [x] 技能特效系统设计文档（docs/skill-effects-system.md）
   - [x] 技能特效系统API文档（docs/skill-effects-api.md）
-  - [ ] 最小可玩客户端 Demo（网页/命令行）
 
 分支与PR流程
 - 开发分支：feature/match-persistence-anticheat
