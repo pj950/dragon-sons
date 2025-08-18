@@ -1,0 +1,238 @@
+{
+  "skillEffects": {
+    "slash": {
+      "effects": {
+        "castEffect": "metal_charge_glow",
+        "castSound": "metal_charge.wav",
+        "castAnimation": "sword_raise",
+        "hitEffect": "metal_slash_sparks",
+        "hitSound": "metal_clang_heavy.wav",
+        "impactAnimation": "hit_stagger",
+        "screenShake": 0.3,
+        "flashColor": "#FFD700",
+        "duration": 200
+      },
+      "ui": {
+        "icon": "skills/slash.png",
+        "description": "蓄力重击，造成高额金系伤害",
+        "color": "#FFD700",
+        "keybind": "Q",
+        "category": "攻击"
+      }
+    },
+    "arcSlash": {
+      "effects": {
+        "castEffect": "metal_arc_charge",
+        "castSound": "sword_whoosh.wav",
+        "castAnimation": "arc_swing",
+        "areaEffect": "metal_arc_wave",
+        "areaSound": "metal_wave.wav",
+        "hitEffect": "metal_arc_hit",
+        "hitSound": "metal_slice.wav",
+        "screenShake": 0.2,
+        "flashColor": "#C0C0C0",
+        "duration": 500
+      },
+      "ui": {
+        "icon": "skills/arc_slash.png",
+        "description": "弧形剑气，对前方扇形区域造成金系伤害",
+        "color": "#C0C0C0",
+        "keybind": "W",
+        "category": "攻击"
+      }
+    },
+    "thunderChain": {
+      "effects": {
+        "castEffect": "wood_lightning_charge",
+        "castSound": "thunder_charge.wav",
+        "castAnimation": "lightning_cast",
+        "projectileEffect": "lightning_chain",
+        "projectileSound": "lightning_crack.wav",
+        "hitEffect": "lightning_explosion",
+        "hitSound": "thunder_boom.wav",
+        "impactAnimation": "electrocute",
+        "screenShake": 0.4,
+        "flashColor": "#00FF00",
+        "duration": 800
+      },
+      "ui": {
+        "icon": "skills/thunder_chain.png",
+        "description": "雷电链击，最多跳跃3次攻击附近敌人",
+        "color": "#00FF00",
+        "keybind": "E",
+        "category": "攻击"
+      }
+    },
+    "stoneWall": {
+      "effects": {
+        "castEffect": "earth_stone_rise",
+        "castSound": "stone_rumble.wav",
+        "castAnimation": "ground_slam",
+        "areaEffect": "stone_wall_emerge",
+        "areaSound": "stone_crack.wav",
+        "duration": 4000
+      },
+      "ui": {
+        "icon": "skills/stone_wall.png",
+        "description": "召唤石壁，临时提升防御力",
+        "color": "#8B4513",
+        "keybind": "R",
+        "category": "防御"
+      }
+    },
+    "earthStomp": {
+      "effects": {
+        "castEffect": "earth_power_buildup",
+        "castSound": "earth_charge.wav",
+        "castAnimation": "stomp_prepare",
+        "areaEffect": "earth_shockwave",
+        "areaSound": "earthquake.wav",
+        "hitEffect": "earth_debris",
+        "hitSound": "rock_impact.wav",
+        "impactAnimation": "stunned",
+        "screenShake": 0.6,
+        "flashColor": "#8B4513",
+        "duration": 1200
+      },
+      "ui": {
+        "icon": "skills/earth_stomp.png",
+        "description": "地裂踏击，震晕周围敌人",
+        "color": "#8B4513",
+        "keybind": "T",
+        "category": "控制"
+      }
+    },
+    "flameBurst": {
+      "effects": {
+        "castEffect": "fire_orb_charge",
+        "castSound": "fire_charge.wav",
+        "castAnimation": "fire_cast",
+        "areaEffect": "fire_explosion",
+        "areaSound": "explosion.wav",
+        "hitEffect": "fire_burst",
+        "hitSound": "fire_roar.wav",
+        "impactAnimation": "burning",
+        "screenShake": 0.4,
+        "flashColor": "#FF4500",
+        "duration": 600
+      },
+      "ui": {
+        "icon": "skills/flame_burst.png",
+        "description": "火焰爆发，对区域内敌人造成火系伤害",
+        "color": "#FF4500",
+        "keybind": "Y",
+        "category": "攻击"
+      }
+    },
+    "iceNova": {
+      "effects": {
+        "castEffect": "ice_crystal_form",
+        "castSound": "ice_form.wav",
+        "castAnimation": "ice_cast",
+        "areaEffect": "ice_nova_expand",
+        "areaSound": "ice_shatter.wav",
+        "hitEffect": "ice_crystals",
+        "hitSound": "ice_crack.wav",
+        "impactAnimation": "frozen",
+        "screenShake": 0.2,
+        "flashColor": "#00BFFF",
+        "duration": 800
+      },
+      "ui": {
+        "icon": "skills/ice_nova.png",
+        "description": "冰环爆发，冰冻周围敌人",
+        "color": "#00BFFF",
+        "keybind": "U",
+        "category": "攻击"
+      }
+    },
+    "windDash": {
+      "effects": {
+        "castEffect": "wind_swirl",
+        "castSound": "wind_whoosh.wav",
+        "castAnimation": "dash_prepare",
+        "projectileEffect": "wind_trail",
+        "projectileSound": "wind_rush.wav",
+        "hitEffect": "wind_impact",
+        "hitSound": "wind_slam.wav",
+        "duration": 300
+      },
+      "ui": {
+        "icon": "skills/wind_dash.png",
+        "description": "风驰突进，快速位移并造成伤害",
+        "color": "#90EE90",
+        "keybind": "I",
+        "category": "位移"
+      }
+    },
+    "phoenix": {
+      "effects": {
+        "castEffect": "phoenix_aura",
+        "castSound": "phoenix_cry.wav",
+        "duration": 12000
+      },
+      "ui": {
+        "icon": "skills/phoenix.png",
+        "description": "不死鸟之力，攻击时回复5%生命值",
+        "color": "#FF6347",
+        "category": "被动"
+      }
+    },
+    "ironBody": {
+      "effects": {
+        "castEffect": "metal_armor_glow",
+        "castSound": "metal_clank.wav"
+      },
+      "ui": {
+        "icon": "skills/iron_body.png",
+        "description": "金刚之身，永久提升20点防御力",
+        "color": "#708090",
+        "category": "被动"
+      }
+    },
+    "swiftFeet": {
+      "effects": {
+        "castEffect": "wind_feet_glow",
+        "castSound": "wind_light.wav"
+      },
+      "ui": {
+        "icon": "skills/swift_feet.png",
+        "description": "迅足如风，永久提升8%移动速度",
+        "color": "#98FB98",
+        "category": "被动"
+      }
+    },
+    "eagleEye": {
+      "effects": {
+        "castEffect": "eye_glow",
+        "castSound": "eagle_cry.wav"
+      },
+      "ui": {
+        "icon": "skills/eagle_eye.png",
+        "description": "鹰眼锐利，永久提升5%暴击率",
+        "color": "#DAA520",
+        "category": "被动"
+      }
+    }
+  },
+  "elementColors": {
+    "metal": "#FFD700",
+    "wood": "#228B22", 
+    "water": "#1E90FF",
+    "fire": "#FF4500",
+    "earth": "#8B4513"
+  },
+  "rarityColors": {
+    "common": "#FFFFFF",
+    "uncommon": "#00FF00",
+    "rare": "#0080FF",
+    "epic": "#FF00FF"
+  },
+  "effectCategories": {
+    "攻击": "#FF6B6B",
+    "防御": "#4ECDC4", 
+    "控制": "#45B7D1",
+    "位移": "#96CEB4",
+    "被动": "#FFEAA7"
+  }
+}
