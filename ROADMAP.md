@@ -88,7 +88,7 @@
 - 文档与演示
   - [x] 根 README 设计文档
   - [x] server README
-  - [ ] 最小可玩客户端 Demo（网页/命令行）
+  - [x] 最小可玩客户端 Demo（网页/命令行）
 
 分支与PR流程
 - 开发分支：feature/match-persistence-anticheat

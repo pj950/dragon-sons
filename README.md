@@ -191,3 +191,28 @@ docker run --rm -p 8787:8787 dragon-sons-server
 | 金刚身 ironBody | 金 metal | 被动 | common | 防御+20 |
 
 > 完整清单与数值请见 `server/src/config/balance.json` 的 `skills`。可通过 `rarityWeights` 与角色/元素权重来调整抽取分布。
+
+## 客户端
+
+### Web客户端（已实现）
+
+在 `client/web/` 目录下提供了一个简单的网页版客户端，用于测试和演示游戏功能：
+
+```bash
+# 启动服务器
+cd server && npm start
+
+# 启动客户端（另一个终端）
+cd client/web
+python3 -m http.server 8000
+# 然后访问 http://localhost:8000
+```
+
+功能特性：
+- 完整游戏流程：登录、房间管理、对战、结算
+- 实时渲染：Canvas 2D绘制地图、玩家、怪物、道具
+- 操作支持：WASD移动、鼠标攻击、QWER技能、123道具
+- UI界面：血量、属性、技能冷却、背包、聊天、排行榜
+- 观战模式：可观看进行中的对局
+
+详见 [client/web/README.md](client/web/README.md)
