@@ -1,0 +1,25 @@
+{
+  "name": "dragon-sons-client",
+  "version": "0.1.0",
+  "description": "龙生九子·五行对战 Web客户端",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve . -p 8080",
+    "dev": "npx serve . -p 8080 --cors",
+    "build": "echo 'Client is static files, no build needed'",
+    "test": "echo 'Tests not implemented yet'"
+  },
+  "keywords": [
+    "game",
+    "multiplayer",
+    "battle-royale",
+    "html5",
+    "canvas",
+    "websocket"
+  ],
+  "author": "Dragon Sons Team",
+  "license": "MIT",
+  "devDependencies": {
+    "serve": "^14.0.0"
+  }
+}

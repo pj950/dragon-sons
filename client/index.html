@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>龙生九子·五行对战</title>
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+    <div id="gameContainer">
+        <!-- 游戏标题 -->
+        <div id="titleScreen" class="screen">
+            <h1 class="game-title">龙生九子·五行对战</h1>
+            <p class="game-subtitle">Five Elements Battle Royale</p>
+            <div class="menu-buttons">
+                <button id="startGame" class="btn btn-primary">开始游戏</button>
+                <button id="spectateGame" class="btn btn-secondary">观战模式</button>
+                <button id="showSettings" class="btn btn-secondary">设置</button>
+            </div>
+            <div class="server-info">
+                <p>服务器状态: <span id="serverStatus">连接中...</span></p>
+                <p>在线玩家: <span id="onlineCount">0</span></p>
+            </div>
+        </div>
+
+        <!-- 游戏主界面 -->
+        <div id="gameScreen" class="screen hidden">
+            <!-- 游戏画布 -->
+            <canvas id="gameCanvas" width="1200" height="800"></canvas>
+            
+            <!-- 游戏UI覆盖层 -->
+            <div id="gameUI">
+                <!-- 玩家信息 -->
+                <div id="playerInfo" class="ui-panel top-left">
+                    <div class="player-stats">
+                        <div class="health-bar">
+                            <div class="bar-bg">
+                                <div id="healthBar" class="bar health"></div>
+                                <span id="healthText" class="bar-text">100/100</span>
+                            </div>
+                        </div>
+                        <div class="shield-bar">
+                            <div class="bar-bg">
+                                <div id="shieldBar" class="bar shield"></div>
+                                <span id="shieldText" class="bar-text">0</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="player-element">
+                        <span>本命元素: </span>
+                        <span id="playerElement" class="element-badge">未知</span>
+                    </div>
+                </div>
+
+                <!-- 技能栏 -->
+                <div id="skillBar" class="ui-panel bottom-center">
+                    <div class="skills">
+                        <div class="skill-slot" data-skill="0">
+                            <div class="skill-icon"></div>
+                            <div class="skill-cooldown">
+                                <div class="cooldown-overlay"></div>
+                                <span class="cooldown-text"></span>
+                            </div>
+                            <div class="skill-keybind">Q</div>
+                        </div>
+                        <div class="skill-slot" data-skill="1">
+                            <div class="skill-icon"></div>
+                            <div class="skill-cooldown">
+                                <div class="cooldown-overlay"></div>
+                                <span class="cooldown-text"></span>
+                            </div>
+                            <div class="skill-keybind">W</div>
+                        </div>
+                        <div class="skill-slot" data-skill="2">
+                            <div class="skill-icon"></div>
+                            <div class="skill-cooldown">
+                                <div class="cooldown-overlay"></div>
+                                <span class="cooldown-text"></span>
+                            </div>
+                            <div class="skill-keybind">E</div>
+                        </div>
+                        <div class="skill-slot" data-skill="3">
+                            <div class="skill-icon"></div>
+                            <div class="skill-cooldown">
+                                <div class="cooldown-overlay"></div>
+                                <span class="cooldown-text"></span>
+                            </div>
+                            <div class="skill-keybind">R</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 背包和道具 -->
+                <div id="inventory" class="ui-panel bottom-right">
+                    <div class="inventory-slots">
+                        <div class="item-slot" data-slot="0">
+                            <div class="item-icon"></div>
+                            <div class="item-count"></div>
+                            <div class="item-keybind">1</div>
+                        </div>
+                        <div class="item-slot" data-slot="1">
+                            <div class="item-icon"></div>
+                            <div class="item-count"></div>
+                            <div class="item-keybind">2</div>
+                        </div>
+                        <div class="item-slot" data-slot="2">
+                            <div class="item-icon"></div>
+                            <div class="item-count"></div>
+                            <div class="item-keybind">3</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 小地图 -->
+                <div id="minimap" class="ui-panel top-right">
+                    <canvas id="minimapCanvas" width="150" height="150"></canvas>
+                    <div class="minimap-info">
+                        <div class="zone-timer">缩圈: <span id="zoneTimer">--:--</span></div>
+                        <div class="alive-count">存活: <span id="aliveCount">0</span></div>
+                    </div>
+                </div>
+
+                <!-- 排行榜 -->
+                <div id="leaderboard" class="ui-panel middle-right hidden">
+                    <h3>排行榜</h3>
+                    <div id="leaderboardList"></div>
+                </div>
+
+                <!-- 聊天框 -->
+                <div id="chatBox" class="ui-panel bottom-left hidden">
+                    <div id="chatMessages"></div>
+                    <input id="chatInput" type="text" placeholder="按Enter发送消息...">
+                </div>
+            </div>
+
+            <!-- 游戏控制 -->
+            <div id="gameControls" class="controls">
+                <button id="toggleLeaderboard" class="btn btn-small">排行榜 (Tab)</button>
+                <button id="toggleChat" class="btn btn-small">聊天 (Enter)</button>
+                <button id="leaveGame" class="btn btn-danger">离开游戏</button>
+            </div>
+        </div>
+
+        <!-- 设置界面 -->
+        <div id="settingsScreen" class="screen hidden">
+            <div class="settings-panel">
+                <h2>游戏设置</h2>
+                <div class="setting-group">
+                    <label>音效音量</label>
+                    <input type="range" id="soundVolume" min="0" max="100" value="80">
+                    <span id="soundVolumeText">80%</span>
+                </div>
+                <div class="setting-group">
+                    <label>画面质量</label>
+                    <select id="graphicsQuality">
+                        <option value="low">低</option>
+                        <option value="medium" selected>中</option>
+                        <option value="high">高</option>
+                    </select>
+                </div>
+                <div class="setting-group">
+                    <label>显示特效</label>
+                    <input type="checkbox" id="showEffects" checked>
+                </div>
+                <div class="setting-buttons">
+                    <button id="saveSettings" class="btn btn-primary">保存</button>
+                    <button id="cancelSettings" class="btn btn-secondary">取消</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 加载界面 -->
+        <div id="loadingScreen" class="screen hidden">
+            <div class="loading-content">
+                <div class="loading-spinner"></div>
+                <p id="loadingText">连接服务器中...</p>
+            </div>
+        </div>
+
+        <!-- 游戏结束界面 -->
+        <div id="gameOverScreen" class="screen hidden">
+            <div class="game-over-panel">
+                <h2 id="gameOverTitle">游戏结束</h2>
+                <div id="gameOverStats">
+                    <div class="stat">
+                        <span class="stat-label">排名:</span>
+                        <span id="finalRank" class="stat-value">-</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">击杀:</span>
+                        <span id="finalKills" class="stat-value">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">伤害:</span>
+                        <span id="finalDamage" class="stat-value">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">存活时间:</span>
+                        <span id="finalTime" class="stat-value">00:00</span>
+                    </div>
+                </div>
+                <div class="game-over-buttons">
+                    <button id="playAgain" class="btn btn-primary">再来一局</button>
+                    <button id="backToMenu" class="btn btn-secondary">返回主菜单</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 提示信息 -->
+    <div id="notifications" class="notifications"></div>
+
+    <!-- JavaScript模块 -->
+    <script src="src/config.js"></script>
+    <script src="src/utils.js"></script>
+    <script src="src/websocket.js"></script>
+    <script src="src/renderer.js"></script>
+    <script src="src/effects.js"></script>
+    <script src="src/audio.js"></script>
+    <script src="src/input.js"></script>
+    <script src="src/ui.js"></script>
+    <script src="src/game.js"></script>
+    <script src="src/main.js"></script>
+</body>
+</html>
