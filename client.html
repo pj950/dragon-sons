@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>龙生九子 · 五行对战</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            font-size: 2.5em;
+            margin: 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        .game-area {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .canvas-container {
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+        #gameCanvas {
+            border: 2px solid #4a90e2;
+            border-radius: 5px;
+            background: #000;
+        }
+        .controls {
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            padding: 20px;
+        }
+        .control-group {
+            margin-bottom: 20px;
+        }
+        .control-group h3 {
+            margin: 0 0 10px 0;
+            color: #4a90e2;
+        }
+        .button {
+            background: #4a90e2;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        .button:hover {
+            background: #357abd;
+        }
+        .button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+        .status {
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .status h3 {
+            margin: 0 0 15px 0;
+            color: #4a90e2;
+        }
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        .status-item {
+            background: rgba(255,255,255,0.1);
+            padding: 8px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .status-label {
+            font-weight: bold;
+            color: #4a90e2;
+        }
+        .log {
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            padding: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .log h3 {
+            margin: 0 0 15px 0;
+            color: #4a90e2;
+        }
+        .log-entry {
+            background: rgba(255,255,255,0.1);
+            padding: 5px 10px;
+            margin: 2px 0;
+            border-radius: 3px;
+            font-size: 12px;
+            font-family: monospace;
+        }
+        .log-entry.info { border-left: 3px solid #4a90e2; }
+        .log-entry.success { border-left: 3px solid #4caf50; }
+        .log-entry.error { border-left: 3px solid #f44336; }
+        .log-entry.warning { border-left: 3px solid #ff9800; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🐉 龙生九子 · 五行对战</h1>
+            <p>一个围绕五行克制与成长的多人对战游戏</p>
+        </div>
+
+        <div class="status">
+            <h3>游戏状态</h3>
+            <div class="status-grid">
+                <div class="status-item">
+                    <span class="status-label">连接状态:</span>
+                    <span id="connectionStatus">未连接</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">房间状态:</span>
+                    <span id="roomStatus">未加入</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">玩家ID:</span>
+                    <span id="playerId">-</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">五行属性:</span>
+                    <span id="playerElement">-</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="game-area">
+            <div class="canvas-container">
+                <canvas id="gameCanvas" width="800" height="600"></canvas>
+                <p>使用 WASD 或方向键移动，鼠标点击攻击，数字键使用技能</p>
+            </div>
+            
+            <div class="controls">
+                <div class="control-group">
+                    <h3>连接</h3>
+                    <input type="text" id="serverUrl" value="ws://localhost:8787" placeholder="服务器地址" style="width: 100%; padding: 8px; margin-bottom: 10px; border-radius: 5px; border: 1px solid #ccc;">
+                    <button class="button" id="connectBtn">连接服务器</button>
+                    <button class="button" id="disconnectBtn" disabled>断开连接</button>
+                </div>
+
+                <div class="control-group">
+                    <h3>游戏控制</h3>
+                    <button class="button" id="startBtn" disabled>开始游戏</button>
+                    <button class="button" id="spectateBtn" disabled>观战模式</button>
+                </div>
+
+                <div class="control-group">
+                    <h3>技能</h3>
+                    <div id="skillsList">
+                        <p>未连接服务器</p>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <h3>背包</h3>
+                    <div id="inventory">
+                        <p>未连接服务器</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="log">
+            <h3>游戏日志</h3>
+            <div id="logContent"></div>
+        </div>
+    </div>
+
+    <script>
+        class DragonSonsClient {
+            constructor() {
+                this.ws = null;
+                this.playerId = null;
+                this.playerElement = null;
+                this.roomId = null;
+                this.gameState = null;
+                this.keys = {};
+                this.mouse = { x: 0, y: 0, down: false };
+                this.skills = [];
+                this.inventory = {};
+                
+                this.initCanvas();
+                this.initEventListeners();
+                this.initControls();
+            }
+
+            initCanvas() {
+                this.canvas = document.getElementById('gameCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.canvas.addEventListener('mousedown', (e) => this.onMouseDown(e));
+                this.canvas.addEventListener('mousemove', (e) => this.onMouseMove(e));
+                this.canvas.addEventListener('mouseup', (e) => this.onMouseUp(e));
+            }
+
+            initEventListeners() {
+                document.addEventListener('keydown', (e) => this.onKeyDown(e));
+                document.addEventListener('keyup', (e) => this.onKeyUp(e));
+            }
+
+            initControls() {
+                document.getElementById('connectBtn').addEventListener('click', () => this.connect());
+                document.getElementById('disconnectBtn').addEventListener('click', () => this.disconnect());
+                document.getElementById('startBtn').addEventListener('click', () => this.startGame());
+                document.getElementById('spectateBtn').addEventListener('click', () => this.spectate());
+            }
+
+            connect() {
+                const url = document.getElementById('serverUrl').value;
+                this.log('正在连接到服务器...', 'info');
+                
+                try {
+                    this.ws = new WebSocket(url);
+                    this.ws.onopen = () => this.onWebSocketOpen();
+                    this.ws.onmessage = (e) => this.onWebSocketMessage(e);
+                    this.ws.onclose = () => this.onWebSocketClose();
+                    this.ws.onerror = (e) => this.onWebSocketError(e);
+                } catch (error) {
+                    this.log('连接失败: ' + error.message, 'error');
+                }
+            }
+
+            disconnect() {
+                if (this.ws) {
+                    this.ws.close();
+                }
+            }
+
+            onWebSocketOpen() {
+                this.log('已连接到服务器', 'success');
+                this.updateConnectionStatus('已连接');
+                document.getElementById('connectBtn').disabled = true;
+                document.getElementById('disconnectBtn').disabled = false;
+                document.getElementById('startBtn').disabled = false;
+                document.getElementById('spectateBtn').disabled = false;
+            }
+
+            onWebSocketMessage(event) {
+                try {
+                    const message = JSON.parse(event.data);
+                    this.handleMessage(message);
+                } catch (error) {
+                    this.log('消息解析错误: ' + error.message, 'error');
+                }
+            }
+
+            onWebSocketClose() {
+                this.log('与服务器断开连接', 'warning');
+                this.updateConnectionStatus('已断开');
+                this.resetGameState();
+                document.getElementById('connectBtn').disabled = false;
+                document.getElementById('disconnectBtn').disabled = true;
+                document.getElementById('startBtn').disabled = true;
+                document.getElementById('spectateBtn').disabled = true;
+            }
+
+            onWebSocketError(error) {
+                this.log('WebSocket错误: ' + error.message, 'error');
+            }
+
+            handleMessage(message) {
+                switch (message.t) {
+                    case 'hello':
+                        this.playerId = message.id;
+                        this.playerElement = message.element;
+                        this.roomId = message.room;
+                        this.updatePlayerInfo();
+                        this.log(`加入游戏，ID: ${message.id}, 五行: ${message.element}`, 'success');
+                        break;
+                    case 'snapshot':
+                        this.gameState = message;
+                        this.render();
+                        break;
+                    case 'countdown':
+                        this.log(`游戏将在 ${Math.ceil((message.endAt - Date.now()) / 1000)} 秒后开始`, 'info');
+                        break;
+                    case 'start':
+                        this.log('游戏开始！', 'success');
+                        break;
+                    case 'end':
+                        this.log('游戏结束', 'info');
+                        break;
+                    default:
+                        this.log(`收到消息: ${message.t}`, 'info');
+                }
+            }
+
+            startGame() {
+                if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                    this.ws.send(JSON.stringify({ t: 'start' }));
+                }
+            }
+
+            spectate() {
+                if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                    this.ws.send(JSON.stringify({ t: 'spectate', room: this.roomId }));
+                }
+            }
+
+            onKeyDown(e) {
+                this.keys[e.code] = true;
+                
+                if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                    switch (e.code) {
+                        case 'KeyW':
+                        case 'ArrowUp':
+                            this.ws.send(JSON.stringify({ t: 'move', vx: 0, vy: -1 }));
+                            break;
+                        case 'KeyS':
+                        case 'ArrowDown':
+                            this.ws.send(JSON.stringify({ t: 'move', vx: 0, vy: 1 }));
+                            break;
+                        case 'KeyA':
+                        case 'ArrowLeft':
+                            this.ws.send(JSON.stringify({ t: 'move', vx: -1, vy: 0 }));
+                            break;
+                        case 'KeyD':
+                        case 'ArrowRight':
+                            this.ws.send(JSON.stringify({ t: 'move', vx: 1, vy: 0 }));
+                            break;
+                        case 'Digit1':
+                        case 'Digit2':
+                        case 'Digit3':
+                        case 'Digit4':
+                            const skillIndex = parseInt(e.code.slice(-1)) - 1;
+                            if (this.skills[skillIndex]) {
+                                this.ws.send(JSON.stringify({ t: 'cast', skillId: this.skills[skillIndex], target: this.playerId }));
+                            }
+                            break;
+                        case 'Space':
+                            this.ws.send(JSON.stringify({ t: 'pickup' }));
+                            break;
+                    }
+                }
+            }
+
+            onKeyUp(e) {
+                this.keys[e.code] = false;
+                
+                if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                    if (['KeyW', 'KeyS', 'KeyA', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
+                        this.ws.send(JSON.stringify({ t: 'move', vx: 0, vy: 0 }));
+                    }
+                }
+            }
+
+            onMouseDown(e) {
+                this.mouse.down = true;
+                this.mouse.x = e.offsetX;
+                this.mouse.y = e.offsetY;
+                
+                if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                    this.ws.send(JSON.stringify({ t: 'attack', target: this.playerId }));
+                }
+            }
+
+            onMouseMove(e) {
+                this.mouse.x = e.offsetX;
+                this.mouse.y = e.offsetY;
+            }
+
+            onMouseUp(e) {
+                this.mouse.down = false;
+            }
+
+            render() {
+                if (!this.gameState) return;
+                
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // 绘制背景
+                this.ctx.fillStyle = '#1a1a1a';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // 绘制安全圈
+                const centerX = this.canvas.width / 2;
+                const centerY = this.canvas.height / 2;
+                const scale = Math.min(this.canvas.width, this.canvas.height) / 100;
+                const radius = this.gameState.radius * scale;
+                
+                this.ctx.strokeStyle = '#4a90e2';
+                this.ctx.lineWidth = 3;
+                this.ctx.beginPath();
+                this.ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+                this.ctx.stroke();
+                
+                // 绘制玩家
+                this.gameState.players.forEach(player => {
+                    const x = centerX + (player.x - 50) * scale;
+                    const y = centerY + (player.y - 50) * scale;
+                    
+                    // 玩家颜色基于五行
+                    const colors = {
+                        metal: '#FFD700',
+                        wood: '#228B22',
+                        water: '#4169E1',
+                        fire: '#FF4500',
+                        earth: '#8B4513'
+                    };
+                    
+                    this.ctx.fillStyle = colors[player.element] || '#FFFFFF';
+                    this.ctx.beginPath();
+                    this.ctx.arc(x, y, 8, 0, Math.PI * 2);
+                    this.ctx.fill();
+                    
+                    // 绘制玩家ID
+                    this.ctx.fillStyle = '#FFFFFF';
+                    this.ctx.font = '12px Arial';
+                    this.ctx.textAlign = 'center';
+                    this.ctx.fillText(player.id, x, y - 15);
+                    
+                    // 绘制血量条
+                    const healthBarWidth = 16;
+                    const healthBarHeight = 3;
+                    const healthPercent = player.hp / player.maxHp;
+                    
+                    this.ctx.fillStyle = '#FF0000';
+                    this.ctx.fillRect(x - healthBarWidth/2, y + 12, healthBarWidth, healthBarHeight);
+                    this.ctx.fillStyle = '#00FF00';
+                    this.ctx.fillRect(x - healthBarWidth/2, y + 12, healthBarWidth * healthPercent, healthBarHeight);
+                });
+                
+                // 绘制实体（水果、道具等）
+                this.gameState.entities.forEach(entity => {
+                    const x = centerX + (entity.x - 50) * scale;
+                    const y = centerY + (entity.y - 50) * scale;
+                    
+                    if (entity.type === 'fruit') {
+                        this.ctx.fillStyle = '#FF69B4';
+                        this.ctx.beginPath();
+                        this.ctx.arc(x, y, 4, 0, Math.PI * 2);
+                        this.ctx.fill();
+                    } else if (entity.type === 'item') {
+                        this.ctx.fillStyle = '#FFD700';
+                        this.ctx.fillRect(x - 3, y - 3, 6, 6);
+                    }
+                });
+            }
+
+            updateConnectionStatus(status) {
+                document.getElementById('connectionStatus').textContent = status;
+            }
+
+            updatePlayerInfo() {
+                document.getElementById('playerId').textContent = this.playerId || '-';
+                document.getElementById('playerElement').textContent = this.playerElement || '-';
+                document.getElementById('roomStatus').textContent = this.roomId ? `房间: ${this.roomId}` : '未加入';
+            }
+
+            resetGameState() {
+                this.playerId = null;
+                this.playerElement = null;
+                this.roomId = null;
+                this.gameState = null;
+                this.skills = [];
+                this.inventory = {};
+                this.updatePlayerInfo();
+                this.render();
+            }
+
+            log(message, type = 'info') {
+                const logContent = document.getElementById('logContent');
+                const entry = document.createElement('div');
+                entry.className = `log-entry ${type}`;
+                entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+                logContent.appendChild(entry);
+                logContent.scrollTop = logContent.scrollHeight;
+            }
+        }
+
+        // 初始化客户端
+        const client = new DragonSonsClient();
+        
+        // 定期渲染
+        setInterval(() => {
+            client.render();
+        }, 50);
+    </script>
+</body>
+</html>

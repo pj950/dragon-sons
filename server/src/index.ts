@@ -70,6 +70,50 @@ function pickCharacter(): CharacterDef {
   return list[Math.floor(Math.random() * list.length)];
 }
 
+function findSpawnPosition(room: Room): { x: number; y: number } {
+  const minDistance = 8; // 最小出生距离
+  const maxAttempts = 50;
+  const worldWidth = 100;
+  const worldHeight = 100;
+  
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const x = Math.random() * worldWidth;
+    const y = Math.random() * worldHeight;
+    
+    // 检查是否在安全圈内
+    const dx = x - room.world.state.center.x;
+    const dy = y - room.world.state.center.y;
+    const distanceFromCenter = Math.sqrt(dx * dx + dy * dy);
+    if (distanceFromCenter > room.world.state.radius * 0.8) {
+      continue; // 太靠近边缘，重试
+    }
+    
+    // 检查与其他玩家的距离
+    let tooClose = false;
+    for (const client of room.clients.values()) {
+      if (client.player) {
+        const dx2 = x - client.player.x;
+        const dy2 = y - client.player.y;
+        const distance = Math.sqrt(dx2 * dx2 + dy2 * dy2);
+        if (distance < minDistance) {
+          tooClose = true;
+          break;
+        }
+      }
+    }
+    
+    if (!tooClose) {
+      return { x, y };
+    }
+  }
+  
+  // 如果找不到合适的位置，返回一个随机位置
+  return {
+    x: Math.random() * worldWidth,
+    y: Math.random() * worldHeight
+  };
+}
+
 function pickSkillsFor(characterId: string, element: Element): string[] {
   const cfg = getConfig();
   const pool = new Map<string, number>();
@@ -119,6 +163,7 @@ wss.on("connection", async (ws: WebSocket) => {
   const baseChar = pickCharacter();
   const element: Element = (baseChar.element === "random" ? pickRandom(getConfig().elements) : baseChar.element) as Element;
   const skillPool = pickSkillsFor(baseChar.id, element);
+  const spawnPos = findSpawnPosition(room);
   const player: Player = {
     id: clientId,
     element,
@@ -130,8 +175,8 @@ wss.on("connection", async (ws: WebSocket) => {
     agi: baseChar.agi,
     dodge: baseChar.dodge,
     sameFruitStacks: {},
-    x: Math.random() * 100,
-    y: Math.random() * 100,
+    x: spawnPos.x,
+    y: spawnPos.y,
     vx: 0,
     vy: 0,
     hp: 100,
