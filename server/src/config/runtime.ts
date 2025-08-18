@@ -2,7 +2,23 @@ import fs from "fs";
 import path from "path";
 import type { Config, Balance } from "../game/types";
 
-const CONFIG_PATH = process.env.CONFIG_PATH || path.join(process.cwd(), "server", "dist", "config", "balance.json");
+function resolveDefaultConfigPath(): string {
+  const candidates = [
+    path.join(process.cwd(), "dist", "config", "balance.json"),
+    path.join(process.cwd(), "server", "dist", "config", "balance.json"),
+    path.join(process.cwd(), "src", "config", "balance.json"),
+  ];
+  for (const candidate of candidates) {
+    try {
+      if (fs.existsSync(candidate)) return candidate;
+    } catch {
+      // ignore
+    }
+  }
+  return candidates[0];
+}
+
+const CONFIG_PATH = process.env.CONFIG_PATH || resolveDefaultConfigPath();
 const AB_PATH = process.env.AB_CONFIG;
 let currentConfig: Config = JSON.parse(fs.readFileSync(CONFIG_PATH, "utf8"));
 if (AB_PATH && fs.existsSync(AB_PATH)) {

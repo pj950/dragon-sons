@@ -25,7 +25,7 @@ npm start
 The server listens on port 8787 by default. Set `PORT` env to override.
 
 ## Runtime config
-- Default config path: `dist/config/config/balance.json`（可通过 `CONFIG_PATH` 指定）
+- Default config path: `dist/config/balance.json`（可通过 `CONFIG_PATH` 指定）
 - 支持热更新：文件变化时自动重载
 
 ## Protocol (WIP)
