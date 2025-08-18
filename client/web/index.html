@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>龙生九子 · 五行对战</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-container">
+        <div id="login-screen" class="screen active">
+            <h1>龙生九子 · 五行对战</h1>
+            <div class="login-form">
+                <input type="text" id="username" placeholder="输入你的名字" maxlength="16">
+                <button id="play-btn">开始游戏</button>
+            </div>
+            <div class="server-status">
+                <span id="server-status">未连接</span>
+            </div>
+        </div>
+
+        <div id="room-screen" class="screen">
+            <h2>选择房间</h2>
+            <div class="room-controls">
+                <button id="create-room-btn">创建房间</button>
+                <button id="quick-match-btn">快速匹配</button>
+                <button id="refresh-rooms-btn">刷新列表</button>
+            </div>
+            <div id="room-list" class="room-list"></div>
+            <button id="back-to-login" class="back-btn">返回</button>
+        </div>
+
+        <div id="game-screen" class="screen">
+            <div class="game-header">
+                <div class="player-info">
+                    <span id="player-name"></span>
+                    <span id="player-element" class="element-badge"></span>
+                    <div class="health-bar">
+                        <div id="health-fill" class="health-fill"></div>
+                        <span id="health-text">100/100</span>
+                    </div>
+                </div>
+                <div class="game-timer">
+                    <span id="game-time">等待开始...</span>
+                    <span id="alive-count"></span>
+                </div>
+            </div>
+
+            <canvas id="game-canvas"></canvas>
+
+            <div class="game-ui">
+                <div class="stats-panel">
+                    <div class="stat">攻击: <span id="stat-atk">100</span></div>
+                    <div class="stat">敏捷: <span id="stat-agi">100</span></div>
+                    <div class="stat">防御: <span id="stat-def">80</span></div>
+                    <div class="stat">闪避: <span id="stat-dodge">10%</span></div>
+                    <div class="stat">暴击: <span id="stat-crit">10%</span></div>
+                </div>
+
+                <div class="inventory">
+                    <div class="slot" data-slot="0">
+                        <span class="slot-key">1</span>
+                        <div class="slot-content"></div>
+                    </div>
+                    <div class="slot" data-slot="1">
+                        <span class="slot-key">2</span>
+                        <div class="slot-content"></div>
+                    </div>
+                    <div class="slot" data-slot="2">
+                        <span class="slot-key">3</span>
+                        <div class="slot-content"></div>
+                    </div>
+                </div>
+
+                <div class="skills-panel">
+                    <div class="skill-slot" data-skill="0">
+                        <span class="skill-key">Q</span>
+                        <div class="skill-icon"></div>
+                        <div class="skill-cooldown"></div>
+                    </div>
+                    <div class="skill-slot" data-skill="1">
+                        <span class="skill-key">W</span>
+                        <div class="skill-icon"></div>
+                        <div class="skill-cooldown"></div>
+                    </div>
+                    <div class="skill-slot" data-skill="2">
+                        <span class="skill-key">E</span>
+                        <div class="skill-icon"></div>
+                        <div class="skill-cooldown"></div>
+                    </div>
+                    <div class="skill-slot" data-skill="3">
+                        <span class="skill-key">R</span>
+                        <div class="skill-icon"></div>
+                        <div class="skill-cooldown"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-container">
+                <div id="chat-messages"></div>
+                <input type="text" id="chat-input" placeholder="按Enter发送消息...">
+            </div>
+        </div>
+
+        <div id="spectator-screen" class="screen">
+            <h2>观战模式</h2>
+            <canvas id="spectator-canvas"></canvas>
+            <div class="spectator-controls">
+                <button id="leave-spectate">退出观战</button>
+            </div>
+            <div id="spectator-leaderboard" class="leaderboard"></div>
+        </div>
+
+        <div id="game-over-screen" class="screen">
+            <h1 id="game-result"></h1>
+            <div id="final-stats"></div>
+            <div id="leaderboard" class="leaderboard"></div>
+            <button id="return-to-rooms">返回大厅</button>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
