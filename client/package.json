@@ -7,7 +7,9 @@
     "start": "npx serve . -p 8080",
     "dev": "npx serve . -p 8080 --cors",
     "build": "echo 'Client is static files, no build needed'",
-    "test": "echo 'Tests not implemented yet'"
+    "test": "echo 'Tests not implemented yet'",
+    "generate-assets": "node deploy-assets.js && echo 'Open generate-assets.html to generate files'",
+    "deploy-assets": "node deploy-assets.js"
   },
   "keywords": [
     "game",

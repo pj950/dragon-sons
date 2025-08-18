@@ -13,6 +13,12 @@ class DragonSonsClient {
         console.log('Initializing Dragon Sons client...');
         
         try {
+            // 初始化资源管理器
+            await window.assetManager.initialize();
+            
+            // 预热核心资源
+            await window.assetManager.warmupAssets();
+            
             // 初始化渲染器
             const canvas = DOMUtils.$('#gameCanvas');
             if (!canvas) {

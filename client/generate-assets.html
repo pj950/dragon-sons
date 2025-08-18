@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>龙生九子·五行对战 - 资源生成工具</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            background: rgba(0,0,0,0.8);
+            padding: 30px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+        }
+        h1 {
+            text-align: center;
+            background: linear-gradient(45deg, #FFD700, #FF6B6B, #4ECDC4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+        }
+        .section {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .section h2 {
+            color: #4ECDC4;
+            margin-bottom: 15px;
+        }
+        button {
+            padding: 12px 24px;
+            margin: 8px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .btn-primary {
+            background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
+            color: white;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255,107,107,0.4);
+        }
+        .btn-secondary {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+        .btn-success {
+            background: linear-gradient(45deg, #4ECDC4, #44A08D);
+            color: white;
+        }
+        .progress {
+            width: 100%;
+            height: 20px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #4ECDC4, #44A08D);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .log {
+            background: rgba(0,0,0,0.5);
+            padding: 15px;
+            border-radius: 6px;
+            height: 200px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .icon-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .icon-item {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 6px;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .icon-item:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateY(-2px);
+        }
+        .icon-preview {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 8px auto;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+            text-align: center;
+            font-weight: bold;
+        }
+        .status.success { background: rgba(76, 175, 80, 0.3); color: #4CAF50; }
+        .status.error { background: rgba(244, 67, 54, 0.3); color: #F44336; }
+        .status.warning { background: rgba(255, 152, 0, 0.3); color: #FF9800; }
+        .status.info { background: rgba(33, 150, 243, 0.3); color: #2196F3; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🐉 资源生成工具</h1>
+        
+        <!-- 音效生成 -->
+        <div class="section">
+            <h2>🔊 音效文件生成</h2>
+            <p>使用Web Audio API程序生成游戏所需的音效文件</p>
+            
+            <div class="progress">
+                <div id="audioProgress" class="progress-bar"></div>
+            </div>
+            
+            <button id="generateAudio" class="btn-primary">生成所有音效 (40+个)</button>
+            <button id="downloadAudio" class="btn-secondary" disabled>下载音效包</button>
+            <button id="testAudio" class="btn-secondary">测试音效</button>
+            
+            <div id="audioStatus" class="status info">准备生成音效文件</div>
+            <div id="audioLog" class="log"></div>
+        </div>
+
+        <!-- 技能图标生成 -->
+        <div class="section">
+            <h2>⚔️ 技能图标生成</h2>
+            <p>使用Canvas程序生成技能图标</p>
+            
+            <div class="progress">
+                <div id="iconProgress" class="progress-bar"></div>
+            </div>
+            
+            <button id="generateIcons" class="btn-primary">生成技能图标 (50+个)</button>
+            <button id="downloadIcons" class="btn-secondary" disabled>下载图标包</button>
+            
+            <div id="iconStatus" class="status info">准备生成技能图标</div>
+            
+            <!-- 图标预览 -->
+            <div id="iconPreview" class="icon-grid"></div>
+        </div>
+
+        <!-- 道具图标生成 -->
+        <div class="section">
+            <h2>🎒 道具图标生成</h2>
+            <p>生成水果、道具、装备图标</p>
+            
+            <button id="generateItems" class="btn-primary">生成道具图标</button>
+            <button id="downloadItems" class="btn-secondary" disabled>下载道具图标</button>
+            
+            <div id="itemStatus" class="status info">准备生成道具图标</div>
+            <div id="itemPreview" class="icon-grid"></div>
+        </div>
+
+        <!-- UI资源生成 -->
+        <div class="section">
+            <h2>🎨 UI资源生成</h2>
+            <p>生成按钮、面板、装饰等UI元素</p>
+            
+            <button id="generateUI" class="btn-primary">生成UI资源</button>
+            <button id="downloadUI" class="btn-secondary" disabled>下载UI资源</button>
+            
+            <div id="uiStatus" class="status info">准备生成UI资源</div>
+            <div id="uiPreview" class="icon-grid"></div>
+        </div>
+
+        <!-- 批量操作 -->
+        <div class="section">
+            <h2>🚀 批量生成</h2>
+            <p>一键生成所有游戏资源</p>
+            
+            <button id="generateAll" class="btn-success">生成所有资源</button>
+            <button id="downloadAll" class="btn-success" disabled>下载完整资源包</button>
+            
+            <div id="overallStatus" class="status info">准备生成所有资源</div>
+            
+            <div class="section" style="margin-top: 20px;">
+                <h3>📊 生成统计</h3>
+                <div id="generationStats">
+                    <p>音效文件: <span id="audioCount">0</span></p>
+                    <p>技能图标: <span id="skillIconCount">0</span></p>
+                    <p>道具图标: <span id="itemIconCount">0</span></p>
+                    <p>UI资源: <span id="uiAssetCount">0</span></p>
+                    <p><strong>总计: <span id="totalAssetCount">0</span></strong></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 导入生成器 -->
+    <script src="src/utils.js"></script>
+    <script src="src/config.js"></script>
+    <script src="src/audio-generator.js"></script>
+    <script src="src/icon-generator.js"></script>
+    <script src="src/ui-generator.js"></script>
+
+    <script>
+        let audioGenerator = null;
+        let iconGenerator = null;
+        let uiGenerator = null;
+        let generatedAssets = {
+            sounds: new Map(),
+            icons: new Map(),
+            items: new Map(),
+            ui: new Map()
+        };
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', async () => {
+            audioGenerator = new AudioGenerator();
+            iconGenerator = new IconGenerator();
+            uiGenerator = new UIGenerator();
+            setupEventListeners();
+            log('audioLog', '🚀 资源生成工具已加载');
+        });
+
+        // 设置事件监听器
+        function setupEventListeners() {
+            document.getElementById('generateAudio').addEventListener('click', generateAudioFiles);
+            document.getElementById('downloadAudio').addEventListener('click', downloadAudioFiles);
+            document.getElementById('testAudio').addEventListener('click', testAudioFiles);
+            
+            document.getElementById('generateIcons').addEventListener('click', generateSkillIcons);
+            document.getElementById('downloadIcons').addEventListener('click', downloadIconFiles);
+            
+            document.getElementById('generateItems').addEventListener('click', generateItemIcons);
+            document.getElementById('downloadItems').addEventListener('click', downloadItemFiles);
+            
+            document.getElementById('generateUI').addEventListener('click', generateUIAssets);
+            document.getElementById('downloadUI').addEventListener('click', downloadUIAssets);
+            
+            document.getElementById('generateAll').addEventListener('click', generateAllAssets);
+            document.getElementById('downloadAll').addEventListener('click', downloadAllAssets);
+        }
+
+        // 日志函数
+        function log(elementId, message) {
+            const logElement = document.getElementById(elementId);
+            if (logElement) {
+                const timestamp = new Date().toLocaleTimeString();
+                logElement.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+                logElement.scrollTop = logElement.scrollHeight;
+            }
+            console.log(message);
+        }
+
+        // 更新状态
+        function updateStatus(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.textContent = message;
+                element.className = `status ${type}`;
+            }
+        }
+
+        // 更新进度条
+        function updateProgress(elementId, progress) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.style.width = progress + '%';
+            }
+        }
+
+        // 生成音效文件
+        async function generateAudioFiles() {
+            updateStatus('audioStatus', '正在生成音效文件...', 'info');
+            log('audioLog', '🎵 开始生成音效文件...');
+            
+            try {
+                const results = await audioGenerator.generateAllSounds();
+                
+                let successCount = 0;
+                results.forEach((result, index) => {
+                    if (result.success) {
+                        successCount++;
+                        generatedAssets.sounds.set(result.name, result.url);
+                        log('audioLog', `✅ ${result.name}`);
+                    } else {
+                        log('audioLog', `❌ ${result.name}: ${result.error}`);
+                    }
+                    
+                    updateProgress('audioProgress', ((index + 1) / results.length) * 100);
+                });
+                
+                updateStatus('audioStatus', `音效生成完成: ${successCount}/${results.length}`, 'success');
+                document.getElementById('downloadAudio').disabled = false;
+                
+            } catch (error) {
+                updateStatus('audioStatus', '音效生成失败: ' + error.message, 'error');
+                log('audioLog', '❌ 音效生成失败: ' + error.message);
+            }
+        }
+
+        // 测试音效
+        async function testAudioFiles() {
+            if (generatedAssets.sounds.size === 0) {
+                updateStatus('audioStatus', '请先生成音效文件', 'warning');
+                return;
+            }
+            
+            log('audioLog', '🔊 测试音效播放...');
+            
+            // 测试几个代表性音效
+            const testSounds = ['metal_charge.wav', 'thunder_crack.wav', 'fire_roar.wav'];
+            
+            for (const soundName of testSounds) {
+                const soundData = generatedAssets.sounds.get(soundName);
+                if (soundData) {
+                    const audio = new Audio(soundData);
+                    audio.volume = 0.3;
+                    audio.play();
+                    log('audioLog', `🔊 播放: ${soundName}`);
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+            }
+            
+            log('audioLog', '✅ 音效测试完成');
+        }
+
+        // 下载音效文件
+        function downloadAudioFiles() {
+            log('audioLog', '📥 开始下载音效文件...');
+            audioGenerator.downloadAllSounds();
+            log('audioLog', '✅ 音效文件下载完成');
+        }
+
+        // 生成技能图标
+        async function generateSkillIcons() {
+            updateStatus('iconStatus', '正在生成技能图标...', 'info');
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = 64;
+            canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            
+            // 技能图标配置
+            const skillIcons = [
+                // 金系技能
+                { id: 'slash', name: '重斩', element: 'metal', symbol: '⚔️', color: '#FFD700' },
+                { id: 'arcSlash', name: '弧形剑气', element: 'metal', symbol: '🌙', color: '#C0C0C0' },
+                { id: 'metalClash', name: '金鸣', element: 'metal', symbol: '⚡', color: '#FFD700' },
+                { id: 'staticField', name: '静电场', element: 'metal', symbol: '🔆', color: '#FFD700' },
+                { id: 'silenceHex', name: '缄咒', element: 'metal', symbol: '🚫', color: '#4B0082' },
+                { id: 'bloodletting', name: '流血', element: 'metal', symbol: '🩸', color: '#8B0000' },
+                { id: 'ironRain', name: '铁雨', element: 'metal', symbol: '🌧️', color: '#C0C0C0' },
+                
+                // 木系技能
+                { id: 'thunderChain', name: '雷链', element: 'wood', symbol: '⚡', color: '#00FF00' },
+                { id: 'windDash', name: '风驰', element: 'wood', symbol: '💨', color: '#90EE90' },
+                { id: 'forestSnare', name: '缚根', element: 'wood', symbol: '🌿', color: '#228B22' },
+                { id: 'cyclone', name: '龙卷', element: 'wood', symbol: '🌪️', color: '#90EE90' },
+                { id: 'venomStrike', name: '蛇毒', element: 'wood', symbol: '🐍', color: '#9ACD32' },
+                { id: 'galeStep', name: '疾风步', element: 'wood', symbol: '🌪️', color: '#90EE90' },
+                { id: 'rootBind', name: '缚术', element: 'wood', symbol: '🌳', color: '#8B4513' },
+                { id: 'leafBlade', name: '叶刃', element: 'wood', symbol: '🍃', color: '#228B22' },
+                { id: 'vineWhip', name: '藤鞭', element: 'wood', symbol: '🌿', color: '#228B22' },
+                
+                // 水系技能
+                { id: 'iceNova', name: '冰环', element: 'water', symbol: '❄️', color: '#00BFFF' },
+                { id: 'waterJet', name: '水矢', element: 'water', symbol: '💧', color: '#1E90FF' },
+                { id: 'torrent', name: '急流', element: 'water', symbol: '🌊', color: '#1E90FF' },
+                { id: 'blizzard', name: '暴雪', element: 'water', symbol: '🌨️', color: '#B0E0E6' },
+                { id: 'mistVeil', name: '迷雾', element: 'water', symbol: '🌫️', color: '#B0C4DE' },
+                { id: 'steamBurst', name: '蒸腾', element: 'water', symbol: '💨', color: '#F0F8FF' },
+                
+                // 火系技能
+                { id: 'flameBurst', name: '炎爆', element: 'fire', symbol: '🔥', color: '#FF4500' },
+                { id: 'lavaZone', name: '熔域', element: 'fire', symbol: '🌋', color: '#FF6347' },
+                { id: 'meteor', name: '陨星', element: 'fire', symbol: '☄️', color: '#FF4500' },
+                { id: 'burningMark', name: '灼印', element: 'fire', symbol: '🔥', color: '#FF6347' },
+                { id: 'emberLash', name: '余烬', element: 'fire', symbol: '✨', color: '#FF4500' },
+                { id: 'solarFlare', name: '耀焰', element: 'fire', symbol: '☀️', color: '#FFD700' },
+                
+                // 土系技能
+                { id: 'stoneWall', name: '石壁', element: 'earth', symbol: '🧱', color: '#8B4513' },
+                { id: 'earthStomp', name: '地裂踏击', element: 'earth', symbol: '💥', color: '#8B4513' },
+                { id: 'rockShield', name: '岩盾', element: 'earth', symbol: '🛡️', color: '#8B4513' },
+                { id: 'quake', name: '震荡', element: 'earth', symbol: '🏔️', color: '#8B4513' },
+                { id: 'sandPrison', name: '流沙', element: 'earth', symbol: '🏜️', color: '#D2B48C' },
+                { id: 'mudTrap', name: '泥陷', element: 'earth', symbol: '🕳️', color: '#8B4513' }
+            ];
+            
+            let completed = 0;
+            const iconPreview = document.getElementById('iconPreview');
+            iconPreview.innerHTML = '';
+            
+            for (const skill of skillIcons) {
+                try {
+                    const iconUrl = await generateSkillIcon(canvas, ctx, skill);
+                    generatedAssets.icons.set(`${skill.id}.png`, iconUrl);
+                    
+                    // 添加到预览
+                    const iconItem = document.createElement('div');
+                    iconItem.className = 'icon-item';
+                    iconItem.innerHTML = `
+                        <div class="icon-preview" style="background: ${skill.color};">
+                            ${skill.symbol}
+                        </div>
+                        <div style="font-size: 12px;">${skill.name}</div>
+                    `;
+                    iconItem.onclick = () => downloadSingleIcon(skill.id, iconUrl);
+                    iconPreview.appendChild(iconItem);
+                    
+                    completed++;
+                    updateProgress('iconProgress', (completed / skillIcons.length) * 100);
+                    
+                } catch (error) {
+                    console.error(`生成图标失败: ${skill.id}`, error);
+                }
+            }
+            
+            updateStatus('iconStatus', `技能图标生成完成: ${completed}/${skillIcons.length}`, 'success');
+            document.getElementById('downloadIcons').disabled = false;
+        }
+
+        // 生成单个技能图标
+        async function generateSkillIcon(canvas, ctx, skill) {
+            ctx.clearRect(0, 0, 64, 64);
+            
+            // 背景渐变
+            const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+            gradient.addColorStop(0, skill.color);
+            gradient.addColorStop(1, ColorUtils.addAlpha(skill.color, 0.3));
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 64, 64);
+            
+            // 边框
+            ctx.strokeStyle = ColorUtils.addAlpha(skill.color, 0.8);
+            ctx.lineWidth = 2;
+            ctx.strokeRect(1, 1, 62, 62);
+            
+            // 符号
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 24px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(skill.symbol, 32, 32);
+            
+            // 元素标识
+            ctx.fillStyle = ColorUtils.addAlpha(skill.color, 0.8);
+            ctx.font = 'bold 10px Arial';
+            ctx.fillText(CONFIG.elements[skill.element].name, 32, 54);
+            
+            return canvas.toDataURL('image/png');
+        }
+
+        // 生成道具图标
+        async function generateItemIcons() {
+            updateStatus('itemStatus', '正在生成道具图标...', 'info');
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = 48;
+            canvas.height = 48;
+            const ctx = canvas.getContext('2d');
+            
+            const items = [
+                // 五行水果
+                { id: 'metal_fruit', name: '金果', symbol: '🥇', color: '#FFD700' },
+                { id: 'wood_fruit', name: '木果', symbol: '🌰', color: '#228B22' },
+                { id: 'water_fruit', name: '水果', symbol: '🫐', color: '#1E90FF' },
+                { id: 'fire_fruit', name: '火果', symbol: '🍎', color: '#FF4500' },
+                { id: 'earth_fruit', name: '土果', symbol: '🥔', color: '#8B4513' },
+                
+                // 道具
+                { id: 'invuln', name: '金钟罩', symbol: '🛡️', color: '#FFD700' },
+                { id: 'boots', name: '神行鞋', symbol: '👟', color: '#4ECDC4' },
+                { id: 'potion', name: '疗愈丹', symbol: '🧪', color: '#FF69B4' },
+                { id: 'bomb', name: '火雷丸', symbol: '💣', color: '#FF4500' },
+                { id: 'trap', name: '地刺阵', symbol: '🪤', color: '#8B4513' },
+                { id: 'blink', name: '瞬身符', symbol: '✨', color: '#9370DB' }
+            ];
+            
+            let completed = 0;
+            const itemPreview = document.getElementById('itemPreview');
+            itemPreview.innerHTML = '';
+            
+            for (const item of items) {
+                try {
+                    const iconUrl = await generateItemIcon(canvas, ctx, item);
+                    generatedAssets.items.set(`${item.id}.png`, iconUrl);
+                    
+                    // 添加到预览
+                    const iconItem = document.createElement('div');
+                    iconItem.className = 'icon-item';
+                    iconItem.innerHTML = `
+                        <div class="icon-preview" style="background: ${item.color};">
+                            ${item.symbol}
+                        </div>
+                        <div style="font-size: 12px;">${item.name}</div>
+                    `;
+                    iconItem.onclick = () => downloadSingleIcon(item.id, iconUrl);
+                    itemPreview.appendChild(iconItem);
+                    
+                    completed++;
+                    
+                } catch (error) {
+                    console.error(`生成道具图标失败: ${item.id}`, error);
+                }
+            }
+            
+            updateStatus('itemStatus', `道具图标生成完成: ${completed}/${items.length}`, 'success');
+            document.getElementById('downloadItems').disabled = false;
+        }
+
+        // 生成单个道具图标
+        async function generateItemIcon(canvas, ctx, item) {
+            ctx.clearRect(0, 0, 48, 48);
+            
+            // 圆形背景
+            const gradient = ctx.createRadialGradient(24, 24, 0, 24, 24, 24);
+            gradient.addColorStop(0, item.color);
+            gradient.addColorStop(1, ColorUtils.addAlpha(item.color, 0.5));
+            
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(24, 24, 22, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 边框
+            ctx.strokeStyle = ColorUtils.addAlpha(item.color, 0.8);
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // 符号
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 20px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(item.symbol, 24, 24);
+            
+            return canvas.toDataURL('image/png');
+        }
+
+        // 下载单个图标
+        function downloadSingleIcon(id, url) {
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${id}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        // 下载图标文件
+        function downloadIconFiles() {
+            generatedAssets.icons.forEach((url, filename) => {
+                downloadSingleIcon(filename.replace('.png', ''), url);
+            });
+        }
+
+        // 下载道具文件
+        function downloadItemFiles() {
+            generatedAssets.items.forEach((url, filename) => {
+                downloadSingleIcon(filename.replace('.png', ''), url);
+            });
+        }
+
+        // 生成所有资源
+        async function generateAllAssets() {
+            updateStatus('overallStatus', '正在生成所有资源...', 'info');
+            
+            try {
+                // 生成音效
+                await generateAudioFiles();
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // 生成技能图标
+                await generateSkillIcons();
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // 生成道具图标
+                await generateItemIcons();
+                
+                updateStatus('overallStatus', '所有资源生成完成！', 'success');
+                document.getElementById('downloadAll').disabled = false;
+                
+            } catch (error) {
+                updateStatus('overallStatus', '资源生成失败: ' + error.message, 'error');
+            }
+        }
+
+        // 生成UI资源
+        async function generateUIAssets() {
+            updateStatus('uiStatus', '正在生成UI资源...', 'info');
+            
+            try {
+                const uiAssets = await uiGenerator.generateAllUIAssets();
+                
+                // 保存到全局资源
+                uiAssets.forEach((url, filename) => {
+                    generatedAssets.ui.set(filename, url);
+                });
+                
+                // 更新预览
+                const uiPreview = document.getElementById('uiPreview');
+                uiPreview.innerHTML = '';
+                
+                // 显示部分预览
+                const previewItems = Array.from(uiAssets.entries()).slice(0, 20);
+                previewItems.forEach(([filename, url]) => {
+                    const previewItem = document.createElement('div');
+                    previewItem.className = 'icon-item';
+                    previewItem.innerHTML = `
+                        <div class="icon-preview" style="background-image: url(${url}); background-size: cover;"></div>
+                        <div style="font-size: 10px;">${filename.split('.')[0]}</div>
+                    `;
+                    previewItem.onclick = () => downloadSingleAsset(filename, url);
+                    uiPreview.appendChild(previewItem);
+                });
+                
+                updateStatus('uiStatus', `UI资源生成完成: ${uiAssets.size}个文件`, 'success');
+                document.getElementById('downloadUI').disabled = false;
+                updateAssetCount('uiAssetCount', uiAssets.size);
+                
+            } catch (error) {
+                updateStatus('uiStatus', 'UI资源生成失败: ' + error.message, 'error');
+            }
+        }
+
+        // 下载UI资源
+        function downloadUIAssets() {
+            uiGenerator.downloadUIAssets(generatedAssets.ui);
+        }
+
+        // 下载单个资源
+        function downloadSingleAsset(filename, url) {
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        // 更新资源计数
+        function updateAssetCount(elementId, count) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.textContent = count;
+            }
+            updateTotalCount();
+        }
+
+        // 更新总计数
+        function updateTotalCount() {
+            const audio = generatedAssets.sounds.size;
+            const icons = generatedAssets.icons.size;
+            const items = generatedAssets.items.size;
+            const ui = generatedAssets.ui.size;
+            const total = audio + icons + items + ui;
+            
+            document.getElementById('audioCount').textContent = audio;
+            document.getElementById('skillIconCount').textContent = icons;
+            document.getElementById('itemIconCount').textContent = items;
+            document.getElementById('uiAssetCount').textContent = ui;
+            document.getElementById('totalAssetCount').textContent = total;
+        }
+
+        // 生成所有资源
+        async function generateAllAssets() {
+            updateStatus('overallStatus', '正在生成所有资源...', 'info');
+            
+            try {
+                // 生成音效
+                await generateAudioFiles();
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // 生成技能图标
+                await generateSkillIcons();
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // 生成道具图标
+                await generateItemIcons();
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // 生成UI资源
+                await generateUIAssets();
+                
+                updateTotalCount();
+                updateStatus('overallStatus', '所有资源生成完成！', 'success');
+                document.getElementById('downloadAll').disabled = false;
+                
+            } catch (error) {
+                updateStatus('overallStatus', '资源生成失败: ' + error.message, 'error');
+            }
+        }
+
+        // 下载所有资源
+        function downloadAllAssets() {
+            // 下载音效
+            downloadAudioFiles();
+            
+            // 延迟下载图标，避免浏览器阻止
+            setTimeout(() => {
+                downloadIconFiles();
+            }, 1000);
+            
+            setTimeout(() => {
+                downloadItemFiles();
+            }, 2000);
+            
+            setTimeout(() => {
+                downloadUIAssets();
+            }, 3000);
+            
+            updateStatus('overallStatus', '所有资源下载完成！', 'success');
+        }
+    </script>
+</body>
+</html>

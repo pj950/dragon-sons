@@ -1,0 +1,198 @@
+{
+  "version": "1.0.0",
+  "generated": "2025-08-18T16:16:12.011Z",
+  "description": "龙生九子·五行对战 - 游戏资源清单",
+  "sounds": {
+    "skills": {
+      "metal": [
+        "metal_charge.wav",
+        "metal_clang.wav",
+        "sword_whoosh.wav",
+        "metal_slice.wav",
+        "metal_ring.wav",
+        "electric_charge.wav",
+        "blade_slice.wav",
+        "metal_rain.wav",
+        "metal_clank.wav",
+        "blade_sharpen.wav",
+        "speed_boost.wav"
+      ],
+      "wood": [
+        "thunder_charge.wav",
+        "thunder_crack.wav",
+        "wind_whoosh.wav",
+        "wind_rush.wav",
+        "wood_grow.wav",
+        "vine_rustle.wav",
+        "leaf_rustle.wav",
+        "wind_gather.wav",
+        "poison_brew.wav",
+        "root_grow.wav",
+        "wind_light.wav",
+        "eagle_cry.wav",
+        "life_pulse.wav"
+      ],
+      "water": [
+        "ice_form.wav",
+        "ice_shatter.wav",
+        "water_charge.wav",
+        "water_rush.wav",
+        "water_impact.wav",
+        "wind_cold.wav",
+        "mist_form.wav",
+        "steam_hiss.wav"
+      ],
+      "fire": [
+        "fire_charge.wav",
+        "explosion.wav",
+        "fire_roar.wav",
+        "lava_bubble.wav",
+        "meteor_call.wav",
+        "fire_mark.wav",
+        "fire_whip.wav",
+        "solar_charge.wav"
+      ],
+      "earth": [
+        "stone_rumble.wav",
+        "stone_crack.wav",
+        "earth_charge.wav",
+        "earthquake.wav",
+        "stone_form.wav",
+        "sand_swirl.wav",
+        "mud_bubble.wav",
+        "stone_armor.wav",
+        "shield_activate.wav",
+        "stone_harden.wav"
+      ]
+    },
+    "ui": [
+      "button_click.wav",
+      "notification.wav",
+      "error.wav",
+      "success.wav"
+    ],
+    "ambient": [
+      "ambient_wind.wav",
+      "ambient_battle.wav"
+    ]
+  },
+  "images": {
+    "skills": [
+      "slash.png",
+      "arcSlash.png",
+      "metalClash.png",
+      "staticField.png",
+      "silenceHex.png",
+      "bloodletting.png",
+      "ironRain.png",
+      "ironBody.png",
+      "arcaneFocus.png",
+      "keenEdge.png",
+      "quickCast.png",
+      "thunderChain.png",
+      "windDash.png",
+      "forestSnare.png",
+      "cyclone.png",
+      "venomStrike.png",
+      "galeStep.png",
+      "rootBind.png",
+      "leafBlade.png",
+      "vineWhip.png",
+      "swiftFeet.png",
+      "eagleEye.png",
+      "vitality.png",
+      "thorns.png",
+      "iceNova.png",
+      "waterJet.png",
+      "torrent.png",
+      "blizzard.png",
+      "mistVeil.png",
+      "steamBurst.png",
+      "serpent.png",
+      "flameBurst.png",
+      "lavaZone.png",
+      "meteor.png",
+      "burningMark.png",
+      "emberLash.png",
+      "solarFlare.png",
+      "phoenix.png",
+      "berserk.png",
+      "stoneWall.png",
+      "earthStomp.png",
+      "rockShield.png",
+      "quake.png",
+      "sandPrison.png",
+      "mudTrap.png",
+      "thickHide.png",
+      "shieldWard.png",
+      "aurashield.png",
+      "stoneSkin.png"
+    ],
+    "items": [
+      "metal_fruit.png",
+      "wood_fruit.png",
+      "water_fruit.png",
+      "fire_fruit.png",
+      "earth_fruit.png",
+      "invuln.png",
+      "boots.png",
+      "potion.png",
+      "bomb.png",
+      "trap.png",
+      "blink.png"
+    ],
+    "characters": [
+      "qiuniu.png",
+      "yazi.png",
+      "chaofeng.png",
+      "pulao.png",
+      "suanni.png",
+      "bixi.png",
+      "bixie.png",
+      "fuxi.png",
+      "chiwen.png"
+    ],
+    "ui": [
+      "buttons/",
+      "panels/",
+      "progress_bars/",
+      "decorations/"
+    ]
+  },
+  "usage": {
+    "development": {
+      "description": "开发环境使用程序生成的资源",
+      "command": "npm run generate-assets"
+    },
+    "production": {
+      "description": "生产环境使用优化后的资源文件",
+      "command": "npm run deploy-assets"
+    }
+  },
+  "specifications": {
+    "audio": {
+      "format": "WAV",
+      "sampleRate": "44.1kHz",
+      "bitDepth": "16-bit",
+      "channels": "Mono",
+      "maxDuration": "1.2s"
+    },
+    "images": {
+      "skillIcons": {
+        "format": "PNG",
+        "size": "64x64",
+        "transparency": true
+      },
+      "itemIcons": {
+        "format": "PNG",
+        "size": "48x48",
+        "transparency": true
+      },
+      "ui": {
+        "format": "PNG",
+        "sizes": "Variable",
+        "transparency": true
+      }
+    }
+  }
+}
