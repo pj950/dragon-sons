@@ -34,9 +34,9 @@
     { "id": "blink", "name": "瞬身符", "type": "blink", "cooldown": 25, "trigger": "onUse" }
   ],
   "skills": [
-    { "id": "slash", "name": "重斩", "power": 1.6, "cooldownMs": 4000, "castMs": 500, "element": "metal", "rarity": "common" },
-    { "id": "arcSlash", "name": "弧形剑气", "power": 1.2, "cooldownMs": 3500, "castMs": 300, "radius": 3.5, "element": "metal", "rarity": "common" },
-    { "id": "thunderChain", "name": "雷链", "power": 0.9, "cooldownMs": 6000, "castMs": 200, "chainCount": 3, "range": 8, "element": "wood", "rarity": "rare" },
+    { "id": "slash", "name": "重斩", "power": 1.6, "cooldownMs": 4000, "castMs": 500, "element": "metal", "rarity": "common", "effects": { "castSound": "metal_charge.wav", "hitSound": "metal_clang.wav", "castEffect": "metal_glow", "hitEffect": "metal_sparks", "screenShake": 0.3 }, "ui": { "description": "蓄力重击，造成高额金系伤害", "color": "#FFD700", "category": "攻击" } },
+    { "id": "arcSlash", "name": "弧形剑气", "power": 1.2, "cooldownMs": 3500, "castMs": 300, "radius": 3.5, "element": "metal", "rarity": "common", "effects": { "castSound": "sword_whoosh.wav", "hitSound": "metal_slice.wav", "areaEffect": "metal_arc", "screenShake": 0.2 }, "ui": { "description": "弧形剑气，对前方扇形区域造成金系伤害", "color": "#C0C0C0", "category": "攻击" } },
+    { "id": "thunderChain", "name": "雷链", "power": 0.9, "cooldownMs": 6000, "castMs": 200, "chainCount": 3, "range": 8, "element": "wood", "rarity": "rare", "effects": { "castSound": "thunder_charge.wav", "hitSound": "thunder_crack.wav", "projectileEffect": "lightning_chain", "screenShake": 0.4, "flashColor": "#00FF00" }, "ui": { "description": "雷电链击，最多跳跃3次攻击附近敌人", "color": "#00FF00", "category": "攻击" } },
     { "id": "stoneWall", "name": "石壁", "power": 0, "cooldownMs": 8000, "castMs": 200, "radius": 2.5, "element": "earth", "rarity": "uncommon" },
     { "id": "earthStomp", "name": "地裂踏击", "power": 0, "cooldownMs": 7000, "castMs": 150, "radius": 3.0, "element": "earth", "rarity": "uncommon" },
     { "id": "flameBurst", "name": "炎爆", "power": 1.4, "cooldownMs": 5000, "castMs": 250, "radius": 2.5, "element": "fire", "rarity": "uncommon" },
