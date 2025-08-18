@@ -9,7 +9,14 @@
   },
   "characters": [
     { "id": "qiuniu", "name": "囚牛", "element": "random", "atk": 100, "agi": 95, "dodge": 0.12, "def": 90, "crit": 0.1, "critDmg": 1.5 },
-    { "id": "yazi", "name": "睚眦", "element": "random", "atk": 115, "agi": 95, "dodge": 0.08, "def": 75, "crit": 0.14, "critDmg": 1.6 }
+    { "id": "yazi", "name": "睚眦", "element": "random", "atk": 115, "agi": 95, "dodge": 0.08, "def": 75, "crit": 0.14, "critDmg": 1.6 },
+    { "id": "chaofeng", "name": "嘲风", "element": "random", "atk": 95, "agi": 110, "dodge": 0.14, "def": 80, "crit": 0.11, "critDmg": 1.5 },
+    { "id": "pulao", "name": "蒲牢", "element": "random", "atk": 105, "agi": 115, "dodge": 0.10, "def": 70, "crit": 0.11, "critDmg": 1.5 },
+    { "id": "suanni", "name": "狻猊", "element": "random", "atk": 100, "agi": 90, "dodge": 0.09, "def": 100, "crit": 0.12, "critDmg": 1.6 },
+    { "id": "bixi", "name": "赑屃", "element": "random", "atk": 90, "agi": 85, "dodge": 0.08, "def": 120, "crit": 0.09, "critDmg": 1.5 },
+    { "id": "bixie", "name": "狴犴", "element": "random", "atk": 100, "agi": 90, "dodge": 0.10, "def": 105, "crit": 0.10, "critDmg": 1.5 },
+    { "id": "fuxi", "name": "负屃", "element": "random", "atk": 95, "agi": 110, "dodge": 0.15, "def": 75, "crit": 0.10, "critDmg": 1.5 },
+    { "id": "chiwen", "name": "蚩吻", "element": "random", "atk": 105, "agi": 100, "dodge": 0.11, "def": 85, "crit": 0.12, "critDmg": 1.55 }
   ],
   "fruits": [
     { "element": "metal", "selfAtkFlat": 8, "other": { "critRatePct": 0.02, "max": 0.12 } },
