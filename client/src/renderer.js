@@ -342,15 +342,23 @@ class GameRenderer {
     renderPlayer(player) {
         const isLocalPlayer = window.Game.localPlayer && player.id === window.Game.localPlayer.id;
         
+        // 获取角色样式
+        const characterStyle = this.getCharacterStyle(player.characterId);
+        const radius = 1.5 * characterStyle.size;
+        
         // 玩家主体
-        const radius = 1.5;
         this.ctx.beginPath();
         this.ctx.arc(player.x, player.y, radius, 0, Math.PI * 2);
         
-        // 元素颜色
-        const elementColor = CONFIG.elements[player.element].color;
-        this.ctx.fillStyle = elementColor;
+        // 角色颜色（优先使用角色色彩，否则使用元素色彩）
+        const bodyColor = characterStyle.bodyColor || CONFIG.elements[player.element].color;
+        this.ctx.fillStyle = bodyColor;
         this.ctx.fill();
+        
+        // 装饰圆环
+        this.ctx.strokeStyle = characterStyle.accentColor;
+        this.ctx.lineWidth = 0.15;
+        this.ctx.stroke();
         
         // 边框（本地玩家特殊标识）
         if (isLocalPlayer) {
@@ -358,6 +366,15 @@ class GameRenderer {
             this.ctx.lineWidth = 0.3;
             this.ctx.stroke();
         }
+        
+        // 角色符号
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.font = 'bold 1.0px Arial';
+        this.ctx.shadowColor = 'rgba(0,0,0,0.8)';
+        this.ctx.shadowBlur = 0.2;
+        this.ctx.fillText(characterStyle.symbol, player.x, player.y);
+        this.ctx.shadowColor = 'transparent';
+        this.ctx.shadowBlur = 0;
         
         // 血量条
         if (player.hp < player.maxHp || isLocalPlayer) {
@@ -379,6 +396,9 @@ class GameRenderer {
         
         // 状态效果
         this.renderPlayerEffects(player);
+        
+        // 角色特殊效果
+        this.renderCharacterSpecialEffect(player, characterStyle);
     }
 
     // 渲染玩家状态效果
@@ -571,6 +591,209 @@ class GameRenderer {
         this.safeZone.x = x;
         this.safeZone.y = y;
         this.safeZone.radius = radius;
+    }
+
+    // 获取角色样式
+    getCharacterStyle(characterId) {
+        return CONFIG.characters[characterId] || CONFIG.characters.qiuniu;
+    }
+
+    // 渲染角色特殊效果
+    renderCharacterSpecialEffect(player, style) {
+        if (!CONFIG.graphics.effects.particles) return;
+        
+        const time = Date.now() * 0.001;
+        
+        switch (style.specialEffect) {
+            case 'musical_notes':
+                this.renderMusicalNotes(player.x, player.y, time);
+                break;
+            case 'blade_aura':
+                this.renderBladeAura(player.x, player.y, time);
+                break;
+            case 'wind_trail':
+                this.renderWindTrail(player.x, player.y, time);
+                break;
+            case 'sound_waves':
+                this.renderSoundWaves(player.x, player.y, time);
+                break;
+            case 'smoke_swirl':
+                this.renderSmokeSwirl(player.x, player.y, time);
+                break;
+            case 'stone_debris':
+                this.renderStoneDebris(player.x, player.y, time);
+                break;
+            case 'justice_light':
+                this.renderJusticeLight(player.x, player.y, time);
+                break;
+            case 'text_swirl':
+                this.renderTextSwirl(player.x, player.y, time);
+                break;
+            case 'water_fire_mix':
+                this.renderWaterFireMix(player.x, player.y, time);
+                break;
+        }
+    }
+
+    // 囚牛 - 音符飘动
+    renderMusicalNotes(x, y, time) {
+        const notes = ['♪', '♫', '♬', '♭', '♯'];
+        for (let i = 0; i < 3; i++) {
+            const angle = time * 0.5 + i * 2;
+            const radius = 2 + Math.sin(time + i) * 0.5;
+            const noteX = x + Math.cos(angle) * radius;
+            const noteY = y + Math.sin(angle) * radius;
+            
+            this.ctx.fillStyle = ColorUtils.addAlpha('#32CD32', 0.6);
+            this.ctx.font = 'bold 0.6px Arial';
+            this.ctx.fillText(notes[i % notes.length], noteX, noteY);
+        }
+    }
+
+    // 睚眦 - 刀刃光环
+    renderBladeAura(x, y, time) {
+        const intensity = 0.5 + 0.3 * Math.sin(time * 2);
+        this.ctx.strokeStyle = ColorUtils.addAlpha('#C0C0C0', intensity);
+        this.ctx.lineWidth = 0.1;
+        
+        for (let i = 0; i < 8; i++) {
+            const angle = (i / 8) * Math.PI * 2 + time;
+            const startRadius = 2;
+            const endRadius = 3;
+            
+            this.ctx.beginPath();
+            this.ctx.moveTo(x + Math.cos(angle) * startRadius, y + Math.sin(angle) * startRadius);
+            this.ctx.lineTo(x + Math.cos(angle) * endRadius, y + Math.sin(angle) * endRadius);
+            this.ctx.stroke();
+        }
+    }
+
+    // 嘲风 - 风迹
+    renderWindTrail(x, y, time) {
+        this.ctx.strokeStyle = ColorUtils.addAlpha('#87CEEB', 0.4);
+        this.ctx.lineWidth = 0.1;
+        
+        for (let i = 0; i < 5; i++) {
+            const offset = i * 0.3;
+            const waveX = x + Math.sin(time * 2 + offset) * 2;
+            const waveY = y + Math.cos(time * 1.5 + offset) * 1.5;
+            
+            this.ctx.beginPath();
+            this.ctx.arc(waveX, waveY, 0.2, 0, Math.PI * 2);
+            this.ctx.stroke();
+        }
+    }
+
+    // 蒲牢 - 声波
+    renderSoundWaves(x, y, time) {
+        for (let i = 1; i <= 3; i++) {
+            const radius = i + (time * 2) % 3;
+            const alpha = 1 - (radius / 6);
+            
+            this.ctx.strokeStyle = ColorUtils.addAlpha('#4169E1', alpha);
+            this.ctx.lineWidth = 0.1;
+            this.ctx.beginPath();
+            this.ctx.arc(x, y, radius, 0, Math.PI * 2);
+            this.ctx.stroke();
+        }
+    }
+
+    // 狻猊 - 烟雾旋转
+    renderSmokeSwirl(x, y, time) {
+        this.ctx.fillStyle = ColorUtils.addAlpha('#8A2BE2', 0.3);
+        
+        for (let i = 0; i < 6; i++) {
+            const angle = time + i * 1.047; // 60度间隔
+            const radius = 1.5 + Math.sin(time * 1.5 + i) * 0.5;
+            const smokeX = x + Math.cos(angle) * radius;
+            const smokeY = y + Math.sin(angle) * radius;
+            
+            this.ctx.beginPath();
+            this.ctx.arc(smokeX, smokeY, 0.3, 0, Math.PI * 2);
+            this.ctx.fill();
+        }
+    }
+
+    // 赑屃 - 石块碎片
+    renderStoneDebris(x, y, time) {
+        this.ctx.fillStyle = ColorUtils.addAlpha('#696969', 0.5);
+        
+        for (let i = 0; i < 4; i++) {
+            const angle = time * 0.3 + i * 1.57; // 90度间隔
+            const radius = 2.5;
+            const debrisX = x + Math.cos(angle) * radius;
+            const debrisY = y + Math.sin(angle) * radius;
+            
+            this.ctx.save();
+            this.ctx.translate(debrisX, debrisY);
+            this.ctx.rotate(time + i);
+            this.ctx.fillRect(-0.2, -0.2, 0.4, 0.4);
+            this.ctx.restore();
+        }
+    }
+
+    // 狴犴 - 正义之光
+    renderJusticeLight(x, y, time) {
+        const intensity = 0.4 + 0.2 * Math.sin(time * 1.5);
+        this.ctx.strokeStyle = ColorUtils.addAlpha('#F8F8FF', intensity);
+        this.ctx.lineWidth = 0.1;
+        
+        // 十字光芒
+        this.ctx.beginPath();
+        this.ctx.moveTo(x - 2, y);
+        this.ctx.lineTo(x + 2, y);
+        this.ctx.moveTo(x, y - 2);
+        this.ctx.lineTo(x, y + 2);
+        this.ctx.stroke();
+    }
+
+    // 负屃 - 文字旋转
+    renderTextSwirl(x, y, time) {
+        const characters = ['文', '智', '慧', '学'];
+        this.ctx.fillStyle = ColorUtils.addAlpha('#F5F5DC', 0.6);
+        this.ctx.font = 'bold 0.5px Arial';
+        
+        for (let i = 0; i < characters.length; i++) {
+            const angle = time + i * 1.57;
+            const radius = 2;
+            const textX = x + Math.cos(angle) * radius;
+            const textY = y + Math.sin(angle) * radius;
+            
+            this.ctx.save();
+            this.ctx.translate(textX, textY);
+            this.ctx.rotate(angle);
+            this.ctx.fillText(characters[i], 0, 0);
+            this.ctx.restore();
+        }
+    }
+
+    // 蚩吻 - 水火交融
+    renderWaterFireMix(x, y, time) {
+        // 水的部分
+        this.ctx.fillStyle = ColorUtils.addAlpha('#006994', 0.4);
+        for (let i = 0; i < 3; i++) {
+            const angle = time + i * 2.094; // 120度间隔
+            const radius = 1.8;
+            const waterX = x + Math.cos(angle) * radius;
+            const waterY = y + Math.sin(angle) * radius;
+            
+            this.ctx.beginPath();
+            this.ctx.arc(waterX, waterY, 0.3, 0, Math.PI * 2);
+            this.ctx.fill();
+        }
+        
+        // 火的部分
+        this.ctx.fillStyle = ColorUtils.addAlpha('#FF6347', 0.4);
+        for (let i = 0; i < 3; i++) {
+            const angle = time + Math.PI + i * 2.094; // 相对位置
+            const radius = 1.8;
+            const fireX = x + Math.cos(angle) * radius;
+            const fireY = y + Math.sin(angle) * radius;
+            
+            this.ctx.beginPath();
+            this.ctx.arc(fireX, fireY, 0.3, 0, Math.PI * 2);
+            this.ctx.fill();
+        }
     }
 
     // 获取FPS

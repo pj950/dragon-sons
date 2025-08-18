@@ -423,6 +423,90 @@ class IconGenerator {
         ];
     }
 
+    // 获取角色定义
+    getCharacterDefinitions() {
+        return [
+            { id: 'qiuniu', name: '囚牛', symbol: '🎵', colors: ['#FFD700', '#32CD32'], personality: '音律之龙' },
+            { id: 'yazi', name: '睚眦', symbol: '⚔️', colors: ['#DC143C', '#C0C0C0'], personality: '战斗之龙' },
+            { id: 'chaofeng', name: '嘲风', symbol: '🌪️', colors: ['#40E0D0', '#87CEEB'], personality: '风险之龙' },
+            { id: 'pulao', name: '蒲牢', symbol: '📯', colors: ['#FFD700', '#4169E1'], personality: '音鸣之龙' },
+            { id: 'suanni', name: '狻猊', symbol: '🔥', colors: ['#FF4500', '#8A2BE2'], personality: '烟火之龙' },
+            { id: 'bixi', name: '赑屃', symbol: '🗿', colors: ['#8B4513', '#696969'], personality: '负重之龙' },
+            { id: 'bixie', name: '狴犴', symbol: '⚖️', colors: ['#B8860B', '#F8F8FF'], personality: '诉讼之龙' },
+            { id: 'fuxi', name: '负屃', symbol: '📜', colors: ['#191970', '#F5F5DC'], personality: '文学之龙' },
+            { id: 'chiwen', name: '蚩吻', symbol: '🌊', colors: ['#006994', '#FF6347'], personality: '吞海之龙' }
+        ];
+    }
+
+    // 生成角色头像
+    generateCharacterAvatar(characterData, size = 128) {
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        
+        const [primaryColor, secondaryColor] = characterData.colors;
+        
+        // 背景渐变
+        const gradient = ctx.createRadialGradient(
+            size/2, size/2, 0,
+            size/2, size/2, size/2
+        );
+        gradient.addColorStop(0, primaryColor);
+        gradient.addColorStop(0.7, secondaryColor);
+        gradient.addColorStop(1, ColorUtils.addAlpha(primaryColor, 0.8));
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(size/2, size/2, size/2 - 4, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // 装饰边框
+        ctx.strokeStyle = ColorUtils.lerpColor(primaryColor, '#FFFFFF', 0.3);
+        ctx.lineWidth = 4;
+        ctx.stroke();
+        
+        // 角色符号
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = `bold ${size * 0.25}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.shadowColor = 'rgba(0,0,0,0.5)';
+        ctx.shadowBlur = 4;
+        ctx.fillText(characterData.symbol, size/2, size/2 - size * 0.05);
+        
+        // 角色名称
+        ctx.font = `bold ${size * 0.12}px Arial`;
+        ctx.fillText(characterData.name, size/2, size/2 + size * 0.25);
+        
+        // 个性描述
+        ctx.font = `${size * 0.08}px Arial`;
+        ctx.fillText(characterData.personality, size/2, size/2 + size * 0.35);
+        
+        // 清除阴影
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
+        
+        return canvas.toDataURL();
+    }
+
+    // 批量生成角色头像
+    async generateAllCharacterAvatars() {
+        const characters = this.getCharacterDefinitions();
+        const results = new Map();
+        
+        for (const character of characters) {
+            try {
+                const avatarUrl = this.generateCharacterAvatar(character);
+                results.set(`${character.id}.png`, avatarUrl);
+            } catch (error) {
+                console.error(`生成角色头像失败: ${character.id}`, error);
+            }
+        }
+        
+        return results;
+    }
+
     // 绘制道具背景
     drawItemBackground(itemData) {
         const center = this.size / 2;

@@ -1,0 +1,47 @@
+{
+  "name": "dragon-sons",
+  "version": "1.0.0",
+  "description": "龙生九子·五行对战 - 多人对战游戏",
+  "main": "index.js",
+  "scripts": {
+    "quick-start": "npm run install-all && npm run start-all",
+    "install-all": "cd server && npm install && cd ../client && echo 'Client has no dependencies'",
+    "start-all": "concurrently \"npm run start-server\" \"npm run start-client\"",
+    "start-server": "cd server && npm start",
+    "start-client": "cd client && npx serve . -p 8080",
+    "build": "cd server && npm run build",
+    "test": "cd server && npm test",
+    "dev": "concurrently \"npm run start-server\" \"npm run start-client\"",
+    "generate-assets": "cd client && node deploy-assets.js",
+    "health-check": "curl -s http://localhost:8787/health || echo 'Server not running'",
+    "stop-all": "pkill -f 'node.*server' && pkill -f 'serve.*client' || true"
+  },
+  "keywords": [
+    "game",
+    "multiplayer", 
+    "battle-royale",
+    "websocket",
+    "html5",
+    "canvas",
+    "five-elements",
+    "chinese-mythology"
+  ],
+  "author": "Dragon Sons Team",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.0.0",
+    "serve": "^14.0.0"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pj950/dragon-sons.git"
+  },
+  "homepage": "https://github.com/pj950/dragon-sons#readme",
+  "bugs": {
+    "url": "https://github.com/pj950/dragon-sons/issues"
+  }
+}

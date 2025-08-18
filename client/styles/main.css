@@ -215,6 +215,76 @@ body {
 .element-fire { background: #FF4500; color: #fff; }
 .element-earth { background: #8B4513; color: #fff; }
 
+/* 角色主题样式 */
+.character-qiuniu {
+    --primary-color: #FFD700;
+    --secondary-color: #32CD32;
+    --accent-color: #FFF8DC;
+}
+
+.character-yazi {
+    --primary-color: #DC143C;
+    --secondary-color: #C0C0C0;
+    --accent-color: #FFB6C1;
+}
+
+.character-chaofeng {
+    --primary-color: #40E0D0;
+    --secondary-color: #87CEEB;
+    --accent-color: #E0FFFF;
+}
+
+.character-pulao {
+    --primary-color: #FFD700;
+    --secondary-color: #4169E1;
+    --accent-color: #F0F8FF;
+}
+
+.character-suanni {
+    --primary-color: #FF4500;
+    --secondary-color: #8A2BE2;
+    --accent-color: #FFA07A;
+}
+
+.character-bixi {
+    --primary-color: #8B4513;
+    --secondary-color: #696969;
+    --accent-color: #D2B48C;
+}
+
+.character-bixie {
+    --primary-color: #B8860B;
+    --secondary-color: #F8F8FF;
+    --accent-color: #FFFACD;
+}
+
+.character-fuxi {
+    --primary-color: #191970;
+    --secondary-color: #F5F5DC;
+    --accent-color: #E6E6FA;
+}
+
+.character-chiwen {
+    --primary-color: #006994;
+    --secondary-color: #FF6347;
+    --accent-color: #AFEEEE;
+}
+
+/* 角色主题UI适配 */
+.game-ui[data-character] .skill-slot.available {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 10px var(--primary-color);
+}
+
+.game-ui[data-character] .element-badge {
+    background: var(--primary-color);
+    color: var(--accent-color);
+}
+
+.game-ui[data-character] .bar.health {
+    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+}
+
 /* 技能栏 */
 #skillBar {
     background: rgba(0,0,0,0.8);

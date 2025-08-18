@@ -152,6 +152,91 @@ const CONFIG = {
         }
     },
 
+    // 角色样式配置
+    characters: {
+        qiuniu: {
+            name: '囚牛',
+            bodyColor: '#FFD700',
+            accentColor: '#32CD32', 
+            symbol: '🎵',
+            size: 1.0,
+            specialEffect: 'musical_notes',
+            personality: '沉稳、艺术气质、平衡感强'
+        },
+        yazi: {
+            name: '睚眦',
+            bodyColor: '#DC143C',
+            accentColor: '#C0C0C0',
+            symbol: '⚔️', 
+            size: 1.1,
+            specialEffect: 'blade_aura',
+            personality: '好斗、激进、暴烈'
+        },
+        chaofeng: {
+            name: '嘲风',
+            bodyColor: '#40E0D0',
+            accentColor: '#87CEEB',
+            symbol: '🌪️',
+            size: 0.9,
+            specialEffect: 'wind_trail',
+            personality: '机敏、冒险、不拘一格'
+        },
+        pulao: {
+            name: '蒲牢',
+            bodyColor: '#FFD700',
+            accentColor: '#4169E1',
+            symbol: '📯',
+            size: 0.95,
+            specialEffect: 'sound_waves',
+            personality: '活跃、声音洪亮、速度至上'
+        },
+        suanni: {
+            name: '狻猊',
+            bodyColor: '#FF4500',
+            accentColor: '#8A2BE2',
+            symbol: '🔥',
+            size: 1.05,
+            specialEffect: 'smoke_swirl',
+            personality: '威严、稳重、力量感强'
+        },
+        bixi: {
+            name: '赑屃',
+            bodyColor: '#8B4513',
+            accentColor: '#696969',
+            symbol: '🗿',
+            size: 1.2,
+            specialEffect: 'stone_debris',
+            personality: '坚韧、可靠、承担重任'
+        },
+        bixie: {
+            name: '狴犴',
+            bodyColor: '#B8860B',
+            accentColor: '#F8F8FF',
+            symbol: '⚖️',
+            size: 1.0,
+            specialEffect: 'justice_light',
+            personality: '公正、严肃、守护秩序'
+        },
+        fuxi: {
+            name: '负屃',
+            bodyColor: '#191970',
+            accentColor: '#F5F5DC',
+            symbol: '📜',
+            size: 0.95,
+            specialEffect: 'text_swirl',
+            personality: '智慧、文雅、机敏'
+        },
+        chiwen: {
+            name: '蚩吻',
+            bodyColor: '#006994',
+            accentColor: '#FF6347',
+            symbol: '🌊',
+            size: 1.1,
+            specialEffect: 'water_fire_mix',
+            personality: '包容、变化、平衡'
+        }
+    },
+
     // 调试配置
     debug: {
         enabled: false,
