@@ -3,9 +3,22 @@ import { WebSocketServer, WebSocket } from "ws";
 import { getConfig, getBalance, watchConfig } from "./config/runtime";
 import { DEFAULT_ELEMENT_MATRIX } from "./game/elements";
 import type { Balance, Config, Player, Element, CharacterDef } from "./game/types";
+
+// 简化的特效事件类型
+interface SkillEffectEvent {
+  type: "cast" | "hit" | "area" | "projectile";
+  skillId: string;
+  casterId: string;
+  targetId?: string;
+  x?: number;
+  y?: number;
+  timestamp: number;
+  data?: any;
+}
 import { computeDamage } from "./game/combat";
 import { World } from "./game/world";
 import { initStore, loadLeaderboard, loadStats, saveLeaderboard, saveStats } from "./persist/store";
+// import { effectManager } from "./game/effects"; // 暂时注释，稍后实现
 import fs from "fs";
 import path from "path";
 import crypto from "crypto";
@@ -398,6 +411,20 @@ function handleMessage(room: Room, state: ClientState, msg: any) {
     const castMs = Math.max(50, Math.floor(skill.castMs * castMul));
     state.player.casting = { skillId: skill.id, targetId: String(msg.target), endAt: now + castMs };
     state.player.cooldowns[skill.id] = now + skill.cooldownMs;
+    
+    // 广播技能施放特效事件
+    broadcastSkillEffect(room, {
+      type: "cast",
+      skillId: skill.id,
+      casterId: state.id,
+      x: state.player.x,
+      y: state.player.y,
+      timestamp: now,
+      data: {
+        effects: (skill as any).effects,
+        castMs: castMs
+      }
+    });
     return;
   }
 }
@@ -663,6 +690,25 @@ function applySkillDamage(room: Room, atk: Player, def: Player, skill: { id: str
     const dealt = Math.max(0, before - def.hp);
     const cs = room.clients.get(atk.id);
     if (cs) cs.damageDealt = (cs.damageDealt ?? 0) + dealt;
+    
+    // 广播技能命中特效事件
+    if (dealt > 0) {
+      broadcastSkillEffect(room, {
+        type: "hit",
+        skillId: skill.id,
+        casterId: atk.id,
+        targetId: def.id,
+        x: def.x,
+        y: def.y,
+        timestamp: now,
+        data: {
+          effects: (defSkill as any)?.effects,
+          damage: dealt,
+          isCritical: false // TODO: 添加暴击检测
+        }
+      });
+    }
+    
     // lifesteal
     if (dealt > 0 && atk.lifestealPct) atk.hp = Math.min(atk.maxHp, atk.hp + dealt * atk.lifestealPct);
     // reflect
@@ -693,3 +739,15 @@ function applyPassives(p: Player) {
 }
 
 function shuffle<T>(arr: T[]): T[] { const a = arr.slice(); for (let i= a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]];} return a; }
+
+// 特效广播函数
+function broadcastSkillEffect(room: Room, effectEvent: SkillEffectEvent) {
+  const payload = JSON.stringify({ t: "skillEffect", effect: effectEvent });
+  for (const c of room.clients.values()) {
+    if (c.ws.readyState === c.ws.OPEN) c.ws.send(payload);
+  }
+  for (const sid of room.spectators) {
+    const s = room.clients.get(sid);
+    if (s && s.ws.readyState === s.ws.OPEN) s.ws.send(payload);
+  }
+}

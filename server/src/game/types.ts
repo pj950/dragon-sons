@@ -88,6 +88,35 @@ export interface SkillDef {
   kind?: "active" | "passive";
   element?: Element;
   rarity?: "common" | "uncommon" | "rare" | "epic";
+  // visual & audio effects
+  effects?: {
+    // casting effects
+    castEffect?: string;        // particle effect during cast
+    castSound?: string;         // sound during cast
+    castAnimation?: string;     // caster animation
+    // impact effects
+    hitEffect?: string;         // particle effect on hit
+    hitSound?: string;          // sound on hit
+    impactAnimation?: string;   // target hit animation
+    // area effects (for AOE skills)
+    areaEffect?: string;        // ground/area particle effect
+    areaSound?: string;         // ambient area sound
+    // projectile effects (for ranged skills)
+    projectileEffect?: string;  // projectile particle trail
+    projectileSound?: string;   // projectile flying sound
+    // special effects
+    screenShake?: number;       // screen shake intensity (0-1)
+    flashColor?: string;        // screen flash color (hex)
+    duration?: number;          // effect duration in ms
+  };
+  // UI information
+  ui?: {
+    icon?: string;              // skill icon path
+    description?: string;       // skill description for tooltip
+    color?: string;             // UI theme color (hex)
+    keybind?: string;           // suggested keybind
+    category?: string;          // skill category for UI grouping
+  };
   // passive modifiers (applied on spawn)
   passive?: {
     atkFlat?: number;
@@ -244,4 +273,37 @@ export interface TrapEntity extends Position {
   damage: number;
 }
 
-export type WorldEntity = GroundFruit | GroundItem | Monster | BombEntity | TrapEntity;
+// Visual effect entities
+export interface EffectEntity extends Position {
+  id: EntityId;
+  type: "effect";
+  effectType: string;          // effect name/id
+  ownerId?: string;           // who created this effect
+  startTime: number;          // when effect started
+  duration: number;           // how long effect lasts
+  data?: any;                 // additional effect data
+}
+
+// Skill cast event for client synchronization
+export interface SkillCastEvent {
+  casterId: string;
+  skillId: string;
+  targetId?: string;
+  targetX?: number;
+  targetY?: number;
+  timestamp: number;
+}
+
+// Skill effect event for client synchronization  
+export interface SkillEffectEvent {
+  type: "cast" | "hit" | "area" | "projectile";
+  skillId: string;
+  casterId: string;
+  targetId?: string;
+  x?: number;
+  y?: number;
+  timestamp: number;
+  data?: any;
+}
+
+export type WorldEntity = GroundFruit | GroundItem | Monster | BombEntity | TrapEntity | EffectEntity;
