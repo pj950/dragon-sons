@@ -1,0 +1,23 @@
+{
+  "sounds": {
+    "button_click.wav": "sounds/ui/button_click.wav",
+    "success.wav": "sounds/ui/success.wav",
+    "error.wav": "sounds/ui/error.wav",
+    "notification.wav": "sounds/ui/notification.wav",
+    "sword_clash.wav": "sounds/skills/metal/metal_clang.wav",
+    "magic_cast.wav": "sounds/skills/wood/thunder_charge.wav",
+    "explosion.wav": "sounds/skills/fire/explosion.wav",
+    "wind.wav": "sounds/ambient/ambient_wind.wav",
+    "fire.wav": "sounds/skills/fire/fire_roar.wav"
+  },
+  "images": {
+    "sword.svg": "images/skills/slash.svg",
+    "fire.svg": "images/skills/flameBurst.svg",
+    "water.svg": "images/skills/waterJet.svg",
+    "wind.svg": "images/skills/windDash.svg",
+    "earth.svg": "images/skills/earthStomp.svg",
+    "shield.svg": "images/skills/rockShield.svg",
+    "potion.svg": "images/items/potion.svg",
+    "boots.svg": "images/items/boots.svg"
+  }
+}
