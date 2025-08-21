@@ -1,0 +1,5 @@
+<svg width="128" height="128" xmlns="http://www.w3.org/2000/svg">
+    <rect width="128" height="128" fill="#1a202c" stroke="#666" stroke-width="2"/>
+    <text x="64" y="64" font-family="Arial" font-size="32" 
+          fill="white" text-anchor="middle" alignment-baseline="middle">CHI</text>
+</svg>

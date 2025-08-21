@@ -1,0 +1,5 @@
+<svg width="48" height="48" xmlns="http://www.w3.org/2000/svg">
+    <rect width="48" height="48" fill="#2d3748" stroke="#666" stroke-width="2"/>
+    <text x="24" y="24" font-family="Arial" font-size="12" 
+          fill="white" text-anchor="middle" alignment-baseline="middle">BLI</text>
+</svg>
