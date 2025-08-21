@@ -1,0 +1,131 @@
+{
+  "version": "1.0.0",
+  "gameName": "龙生九子·五行对战",
+  "description": "多人对战游戏，五行相生相克",
+  "assets": {
+    "sounds": {
+      "total": 0,
+      "categories": [
+        "skills",
+        "ui",
+        "ambient"
+      ]
+    },
+    "images": {
+      "total": 0,
+      "categories": [
+        "skills",
+        "items",
+        "fruits",
+        "characters",
+        "ui"
+      ]
+    }
+  },
+  "elements": [
+    "metal",
+    "wood",
+    "water",
+    "fire",
+    "earth"
+  ],
+  "characters": [
+    {
+      "id": "qiuniu",
+      "name": "囚牛",
+      "element": "random"
+    },
+    {
+      "id": "yazi",
+      "name": "睚眦",
+      "element": "random"
+    },
+    {
+      "id": "chaofeng",
+      "name": "嘲风",
+      "element": "random"
+    },
+    {
+      "id": "pulao",
+      "name": "蒲牢",
+      "element": "random"
+    },
+    {
+      "id": "suanni",
+      "name": "狻猊",
+      "element": "random"
+    },
+    {
+      "id": "bixi",
+      "name": "赑屃",
+      "element": "random"
+    },
+    {
+      "id": "bian",
+      "name": "狴犴",
+      "element": "random"
+    },
+    {
+      "id": "fuxi",
+      "name": "负屃",
+      "element": "random"
+    },
+    {
+      "id": "chiwen",
+      "name": "蚩吻",
+      "element": "random"
+    }
+  ],
+  "skills": {
+    "metal": [
+      "slash",
+      "arcSlash",
+      "metalClash",
+      "staticField",
+      "silenceHex"
+    ],
+    "wood": [
+      "thunderChain",
+      "windDash",
+      "forestSnare",
+      "cyclone",
+      "venomStrike"
+    ],
+    "water": [
+      "iceNova",
+      "waterJet",
+      "frostBite",
+      "steamCloud",
+      "iceWall"
+    ],
+    "fire": [
+      "flameBurst",
+      "meteorStrike",
+      "fireWhip",
+      "solarFlare",
+      "lavaFlow"
+    ],
+    "earth": [
+      "stoneWall",
+      "earthStomp",
+      "sandTrap",
+      "stoneArmor",
+      "earthquake"
+    ]
+  },
+  "items": [
+    "invuln",
+    "boots",
+    "potion",
+    "bomb",
+    "trap",
+    "blink"
+  ],
+  "fruits": [
+    "metal_fruit",
+    "wood_fruit",
+    "water_fruit",
+    "fire_fruit",
+    "earth_fruit"
+  ]
+}
