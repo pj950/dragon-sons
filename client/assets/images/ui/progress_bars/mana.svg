@@ -1,0 +1,5 @@
+<svg width="200" height="20" xmlns="http://www.w3.org/2000/svg">
+    <rect width="200" height="20" fill="#718096" stroke="#666" stroke-width="2"/>
+    <text x="100" y="10" font-family="Arial" font-size="5" 
+          fill="white" text-anchor="middle" alignment-baseline="middle">MANA</text>
+</svg>
