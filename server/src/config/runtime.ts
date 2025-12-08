@@ -2,8 +2,13 @@ import fs from "fs";
 import path from "path";
 import type { Config, Balance } from "../game/types";
 
-const CONFIG_PATH = process.env.CONFIG_PATH || path.join(process.cwd(), "server", "dist", "config", "balance.json");
-const AB_PATH = process.env.AB_CONFIG;
+function resolvePathFromEnv(filePath?: string): string | undefined {
+  if (!filePath) return undefined;
+  return path.isAbsolute(filePath) ? filePath : path.resolve(process.cwd(), filePath);
+}
+
+const CONFIG_PATH = resolvePathFromEnv(process.env.CONFIG_PATH) ?? path.join(__dirname, "balance.json");
+const AB_PATH = resolvePathFromEnv(process.env.AB_CONFIG);
 let currentConfig: Config = JSON.parse(fs.readFileSync(CONFIG_PATH, "utf8"));
 if (AB_PATH && fs.existsSync(AB_PATH)) {
   currentConfig = deepMerge(currentConfig, JSON.parse(fs.readFileSync(AB_PATH, "utf8")));
